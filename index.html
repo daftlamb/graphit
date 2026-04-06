@@ -242,6 +242,70 @@ function nodeColor(d) { return TYPE_COLORS[d.type] || TYPE_COLORS.default; }
 function nodeR(d) { return Math.max(16, Math.min(34, 14 + d.tags.length * 3)); }
 
 let gData=null, gSvg=null, gG=null, gZoom=null, gNode=null, gLink=null, gSim=null, currentKey='';
+const expandedNodes = new Set();
+
+async function expandNode(d) {
+  if (expandedNodes.has(d.id)) {
+    // collapse: remove children added by this node
+    const toRemove = new Set(gData.nodes.filter(n=>n.parentId===d.id).map(n=>n.id));
+    gData.nodes = gData.nodes.filter(n=>!toRemove.has(n.id));
+    gData.links = gData.links.filter(l=>{
+      const sid = typeof l.source==='object'?l.source.id:l.source;
+      const tid = typeof l.target==='object'?l.target.id:l.target;
+      return !toRemove.has(sid) && !toRemove.has(tid);
+    });
+    expandedNodes.delete(d.id);
+    refreshGraph();
+    return;
+  }
+  try {
+    const res = await notionFetch('/blocks/'+d.id+'/children?page_size=20', currentKey);
+    const childPages = res.results.filter(b=>b.type==='child_page');
+    if (childPages.length === 0) return;
+    const newNodes = childPages.map(b=>({
+      id: b.id, title: b.child_page?.title||'Untitled',
+      tags: [], type: 'page_id', url: 'https://notion.so/'+b.id.replace(/-/g,''),
+      created: new Date(b.created_time).getTime(), excerpt: '', parentId: d.id,
+      x: d.x + (Math.random()-0.5)*80, y: d.y + (Math.random()-0.5)*80
+    }));
+    const newLinks = newNodes.map(n=>({ source: d.id, target: n.id, type: 'child' }));
+    gData.nodes.push(...newNodes);
+    gData.links.push(...newLinks);
+    expandedNodes.add(d.id);
+    refreshGraph();
+  } catch(e) { console.warn('expand failed', e); }
+}
+
+function refreshGraph() {
+  const {nodes, links} = gData;
+  // rebind data
+  gLink = gLink.data(links, d=>(typeof d.source==='object'?d.source.id:d.source)+'-'+(typeof d.target==='object'?d.target.id:d.target));
+  gLink.exit().remove();
+  gLink = gLink.enter().append('line').attr('stroke','rgba(0,0,0,0.15)').attr('stroke-width',1).merge(gLink);
+
+  gNode = gNode.data(nodes, d=>d.id);
+  gNode.exit().remove();
+  const newNode = gNode.enter().append('g').attr('cursor','pointer')
+    .call(d3.drag()
+      .on('start',(e,d)=>{if(!e.active&&gSim)gSim.alphaTarget(0.3).restart();d.fx=d.x;d.fy=d.y;})
+      .on('drag', (e,d)=>{d.fx=e.x;d.fy=e.y;})
+      .on('end',  (e,d)=>{if(!e.active&&gSim)gSim.alphaTarget(0);d.fx=null;d.fy=null;})
+    );
+  newNode.append('circle').attr('r',nodeR).attr('fill',nodeColor)
+    .attr('stroke','rgba(255,255,255,0.8)').attr('stroke-width',2);
+  newNode.append('text').attr('class','node-label')
+    .attr('dy',d=>nodeR(d)+13).attr('text-anchor','middle')
+    .text(d=>d.title.length>18?d.title.slice(0,16)+'…':d.title);
+  newNode.on('mouseenter',showTooltip).on('mouseleave',scheduleHide);
+  newNode.on('click',(e,d)=>{ e.stopPropagation(); expandNode(d); });
+  gNode = newNode.merge(gNode);
+
+  if (gSim) {
+    gSim.nodes(nodes);
+    gSim.force('link').links(links);
+    gSim.alpha(0.4).restart();
+  }
+}
 let tooltipTimer=null;
 const ttEl = document.getElementById('tooltip');
 
@@ -390,6 +454,7 @@ function drawGraph(data) {
     .attr('dy',d=>nodeR(d)+13).attr('text-anchor','middle')
     .text(d=>d.title.length>18?d.title.slice(0,16)+'…':d.title);
   gNode.on('mouseenter',showTooltip).on('mouseleave',scheduleHide);
+  gNode.on('click',(e,d)=>{ e.stopPropagation(); expandNode(d); });
   applyForce();
 }
 
