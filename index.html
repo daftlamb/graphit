@@ -9,7 +9,6 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { background: #f5f2ee; font-family: 'Georgia', serif; overflow: hidden; }
 
-/* setup screen */
 #setup {
   position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
   background: #f5f2ee; z-index: 200;
@@ -38,17 +37,14 @@ body { background: #f5f2ee; font-family: 'Georgia', serif; overflow: hidden; }
 .btn-go:hover { background: #333; }
 #setup-error { color: #c0392b; font-size: 12px; font-family: sans-serif; margin-top: 10px; display: none; }
 
-/* graph screen */
 #graph-wrap { position: fixed; inset: 0; display: none; }
 svg { width: 100%; height: 100%; }
 
-/* node labels */
 .node-label {
   font-family: sans-serif; font-size: 11px; fill: rgba(0,0,0,0.55);
   pointer-events: none; user-select: none;
 }
 
-/* tooltip */
 #tooltip {
   position: fixed; background: #fff; border: 1px solid rgba(0,0,0,0.1);
   border-radius: 12px; padding: 12px 16px; max-width: 260px;
@@ -61,23 +57,24 @@ svg { width: 100%; height: 100%; }
 #tooltip .tt-tag   { background: #f0ede8; color: rgba(0,0,0,0.5); font-size: 10px; padding: 2px 8px; border-radius: 20px; }
 #tooltip .tt-link  { font-size: 11px; color: #888; margin-top: 8px; cursor: pointer; text-decoration: underline; }
 
-/* top bar */
 #topbar {
   position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-  display: none; align-items: center; gap: 10px;
+  display: none; align-items: center; gap: 8px;
   background: rgba(255,255,255,0.88); backdrop-filter: blur(12px);
   border: 1px solid rgba(0,0,0,0.08); border-radius: 40px;
-  padding: 8px 16px; z-index: 100;
+  padding: 8px 14px; z-index: 100;
 }
 #topbar h2 { font-size: 15px; font-weight: 400; color: #1a1a1a; letter-spacing: -0.3px; }
-#topbar .sep { color: rgba(0,0,0,0.2); }
+#topbar .sep { color: rgba(0,0,0,0.2); font-size: 12px; }
 #node-count { font-size: 12px; color: rgba(0,0,0,0.38); font-family: sans-serif; }
-#btn-reset-view { background: none; border: 1px solid rgba(0,0,0,0.12); color: rgba(0,0,0,0.5); padding: 4px 12px; border-radius: 20px; cursor: pointer; font-size: 11px; font-family: sans-serif; }
-#btn-reset-view:hover { background: rgba(0,0,0,0.05); }
-#btn-back { background: none; border: 1px solid rgba(0,0,0,0.12); color: rgba(0,0,0,0.5); padding: 4px 12px; border-radius: 20px; cursor: pointer; font-size: 11px; font-family: sans-serif; }
-#btn-back:hover { background: rgba(0,0,0,0.05); }
+.tb-btn {
+  background: none; border: 1px solid rgba(0,0,0,0.12); color: rgba(0,0,0,0.5);
+  padding: 4px 12px; border-radius: 20px; cursor: pointer; font-size: 11px;
+  font-family: sans-serif; transition: all 0.15s;
+}
+.tb-btn:hover { background: rgba(0,0,0,0.05); }
+.tb-btn.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
 
-/* loading */
 #loading {
   position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
   background: #f5f2ee; z-index: 150; flex-direction: column; gap: 16px;
@@ -90,48 +87,48 @@ svg { width: 100%; height: 100%; }
 </head>
 <body>
 
-<!-- setup -->
 <div id="setup">
   <div class="setup-card">
     <h1>Graph It</h1>
     <p class="sub">visualize your Notion as a knowledge graph</p>
     <div class="field">
       <label>Notion API Key</label>
-      <input type="password" id="inp-key" placeholder="secret_xxxxxxxxxxxx">
-      <div class="hint">Settings → Integrations → New integration</div>
+      <input type="password" id="inp-key" placeholder="ntn_xxxxxxxxxxxx">
+      <div class="hint">notion.so/my-integrations → copy Internal Integration Secret</div>
     </div>
     <div class="field">
-      <label>Database ID <span style="opacity:0.5">(optional — leave blank to scan all)</span></label>
+      <label>Database ID <span style="opacity:0.5">(optional)</span></label>
       <input type="text" id="inp-db" placeholder="32-char ID from page URL">
-      <div class="hint">notion.so/workspace/[this-part]?v=...</div>
+      <div class="hint">leave blank to scan all accessible pages</div>
     </div>
     <button class="btn-go" id="btn-go">Build Graph →</button>
     <div id="setup-error"></div>
   </div>
 </div>
 
-<!-- loading -->
 <div id="loading">
   <div class="spinner"></div>
   <div class="ld-title">Reading Notion…</div>
   <div class="ld-sub" id="ld-status">fetching pages</div>
 </div>
 
-<!-- graph -->
 <div id="graph-wrap">
   <svg id="svg"></svg>
 </div>
 
-<!-- topbar -->
 <div id="topbar">
   <h2>Graph It</h2>
   <span class="sep">·</span>
   <span id="node-count">0 nodes</span>
-  <button id="btn-reset-view">reset view</button>
-  <button id="btn-back">← new graph</button>
+  <span class="sep">·</span>
+  <button class="tb-btn active" id="btn-force">force</button>
+  <button class="tb-btn" id="btn-radial">radial</button>
+  <button class="tb-btn" id="btn-timeline">timeline</button>
+  <span class="sep">·</span>
+  <button class="tb-btn" id="btn-reset-view">reset</button>
+  <button class="tb-btn" id="btn-back">← back</button>
 </div>
 
-<!-- tooltip -->
 <div id="tooltip">
   <div class="tt-title" id="tt-title"></div>
   <div class="tt-type"  id="tt-type"></div>
@@ -139,11 +136,11 @@ svg { width: 100%; height: 100%; }
   <div class="tt-link"  id="tt-link">open in Notion ↗</div>
 </div>
 <script>
-// ── Notion API proxy via cors-anywhere or direct ──────────
+const NOTION_PROXY = 'https://notionproxy.daftlamb.workers.dev/v1';
 const NOTION_VERSION = '2022-06-28';
 
 async function notionFetch(path, key, body=null) {
-  const url = 'https://notionproxy.daftlamb.workers.dev/v1' + path;
+  const url = NOTION_PROXY + path;
   const opts = {
     method: body ? 'POST' : 'GET',
     headers: {
@@ -160,10 +157,8 @@ async function notionFetch(path, key, body=null) {
 
 function setStatus(s) { document.getElementById('ld-status').textContent = s; }
 
-// ── fetch all pages from a database ──────────────────────
 async function fetchDatabase(dbId, key) {
-  const pages = [];
-  let cursor = undefined;
+  const pages = []; let cursor;
   do {
     const body = { page_size: 100 };
     if (cursor) body.start_cursor = cursor;
@@ -174,10 +169,8 @@ async function fetchDatabase(dbId, key) {
   return pages;
 }
 
-// ── search all pages ──────────────────────────────────────
 async function fetchAllPages(key) {
-  const pages = [];
-  let cursor = undefined;
+  const pages = []; let cursor;
   do {
     const body = { page_size: 100, filter: { value: 'page', property: 'object' } };
     if (cursor) body.start_cursor = cursor;
@@ -188,84 +181,179 @@ async function fetchAllPages(key) {
   return pages;
 }
 
-// ── extract title from page ───────────────────────────────
 function getTitle(page) {
   if (!page.properties) return 'Untitled';
   for (const prop of Object.values(page.properties)) {
-    if (prop.type === 'title' && prop.title && prop.title.length > 0) {
+    if (prop.type === 'title' && prop.title && prop.title.length > 0)
       return prop.title.map(t => t.plain_text).join('');
-    }
   }
   return 'Untitled';
 }
 
-// ── extract tags/multi-select ─────────────────────────────
 function getTags(page) {
   if (!page.properties) return [];
   const tags = [];
   for (const prop of Object.values(page.properties)) {
-    if ((prop.type === 'multi_select' || prop.type === 'select') && prop[prop.type]) {
-      const vals = prop.type === 'select' ? [prop.select] : prop.multi_select;
-      if (vals) vals.forEach(v => v && tags.push(v.name));
-    }
+    if (prop.type === 'multi_select' && prop.multi_select)
+      prop.multi_select.forEach(v => v && tags.push(v.name));
+    else if (prop.type === 'select' && prop.select)
+      tags.push(prop.select.name);
   }
   return tags;
 }
 
-// ── build graph data ──────────────────────────────────────
 function buildGraph(pages) {
-  const nodes = [];
-  const links = [];
-  const tagMap = {}; // tag -> [pageId]
+  const nodes = [], links = [], tagMap = {};
   const idSet = new Set(pages.map(p => p.id));
-
   pages.forEach(page => {
     const title = getTitle(page);
     const tags  = getTags(page);
     const type  = page.parent?.type || 'page';
-    nodes.push({ id: page.id, title, tags, type, url: page.url, created: page.created_time });
-    tags.forEach(t => {
-      if (!tagMap[t]) tagMap[t] = [];
-      tagMap[t].push(page.id);
-    });
-    // relation properties
+    const created = new Date(page.created_time).getTime();
+    nodes.push({ id: page.id, title, tags, type, url: page.url, created });
+    tags.forEach(t => { if (!tagMap[t]) tagMap[t]=[]; tagMap[t].push(page.id); });
     if (page.properties) {
       for (const prop of Object.values(page.properties)) {
-        if (prop.type === 'relation' && prop.relation) {
+        if (prop.type === 'relation' && prop.relation)
           prop.relation.forEach(rel => {
-            if (idSet.has(rel.id)) {
-              links.push({ source: page.id, target: rel.id, type: 'relation' });
-            }
+            if (idSet.has(rel.id)) links.push({ source: page.id, target: rel.id, type: 'relation' });
           });
-        }
       }
     }
   });
-
-  // tag co-occurrence links
   Object.values(tagMap).forEach(ids => {
     if (ids.length < 2) return;
-    for (let i = 0; i < ids.length; i++) {
-      for (let j = i+1; j < ids.length; j++) {
-        links.push({ source: ids[i], target: ids[j], type: 'tag' });
-      }
-    }
+    for (let i=0;i<ids.length;i++) for (let j=i+1;j<ids.length;j++)
+      links.push({ source: ids[i], target: ids[j], type: 'tag' });
   });
-
   return { nodes, links };
 }
 
-// ── color by type ─────────────────────────────────────────
-const TYPE_COLORS = {
-  database_id: '#c8b8a2',
-  page_id:     '#a8c4b8',
-  workspace:   '#b8a8c4',
-  default:     '#c4b8a8'
-};
+const TYPE_COLORS = { database_id:'#c8b8a2', page_id:'#a8c4b8', workspace:'#b8a8c4', default:'#c4b8a8' };
 function nodeColor(d) { return TYPE_COLORS[d.type] || TYPE_COLORS.default; }
+function nodeR(d) { return Math.max(10, Math.min(22, 8 + d.tags.length * 2.5)); }
 
-// ── draw graph ────────────────────────────────────────────
+// ── global graph state ────────────────────────────────────
+let gData = null, gSvg = null, gG = null, gZoom = null;
+let gNode = null, gLink = null, gSim = null;
+let currentMode = 'force';
+
+function showTooltip(e, d) {
+  document.getElementById('tt-title').textContent = d.title;
+  document.getElementById('tt-type').textContent  = d.type.replace('_id','');
+  document.getElementById('tt-tags').innerHTML = d.tags.map(t=>`<span class="tt-tag">${t}</span>`).join('');
+  document.getElementById('tt-link').onclick = () => window.open(d.url,'_blank');
+  const tt = document.getElementById('tooltip');
+  tt.style.display='block'; tt.style.left=(e.clientX+14)+'px'; tt.style.top=(e.clientY-10)+'px';
+}
+function hideTooltip() { document.getElementById('tooltip').style.display='none'; }
+
+// ── mode: force ───────────────────────────────────────────
+function applyForce() {
+  if (gSim) gSim.stop();
+  const W = window.innerWidth, H = window.innerHeight;
+  const nodes = gData.nodes, links = gData.links;
+
+  gSim = d3.forceSimulation(nodes)
+    .force('link', d3.forceLink(links).id(d=>d.id).distance(d=>d.type==='tag'?90:60).strength(d=>d.type==='tag'?0.3:0.7))
+    .force('charge', d3.forceManyBody().strength(-180))
+    .force('center', d3.forceCenter(W/2, H/2))
+    .force('collision', d3.forceCollide(d=>nodeR(d)+4));
+
+  gLink.transition().duration(600)
+    .attr('stroke', d=>d.type==='relation'?'rgba(0,0,0,0.25)':'rgba(0,0,0,0.08)')
+    .attr('stroke-width', d=>d.type==='relation'?1.5:0.8);
+
+  gSim.on('tick', () => {
+    gLink.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y)
+         .attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+    gNode.attr('transform',d=>`translate(${d.x},${d.y})`);
+  });
+  gSim.alpha(0.8).restart();
+}
+
+// ── mode: radial (cluster by tag) ────────────────────────
+function applyRadial() {
+  if (gSim) gSim.stop();
+  const W = window.innerWidth, H = window.innerHeight;
+  const cx = W/2, cy = H/2;
+  const nodes = gData.nodes;
+
+  // group by most common tag
+  const tagCount = {};
+  nodes.forEach(n => n.tags.forEach(t => { tagCount[t]=(tagCount[t]||0)+1; }));
+  const topTags = Object.entries(tagCount).sort((a,b)=>b[1]-a[1]).slice(0,12).map(e=>e[0]);
+  const tagIndex = {};
+  topTags.forEach((t,i) => tagIndex[t]=i);
+
+  const R = Math.min(W,H)*0.38;
+  const targets = nodes.map(n => {
+    const tag = n.tags.find(t => tagIndex[t]!==undefined);
+    if (tag !== undefined) {
+      const idx = tagIndex[tag];
+      const angle = (idx / topTags.length) * Math.PI * 2 - Math.PI/2;
+      const r = R * (0.5 + Math.random()*0.5);
+      return { x: cx + Math.cos(angle)*r, y: cy + Math.sin(angle)*r };
+    }
+    return { x: cx + (Math.random()-0.5)*80, y: cy + (Math.random()-0.5)*80 };
+  });
+
+  gSim = d3.forceSimulation(nodes)
+    .force('x', d3.forceX((d,i)=>targets[i].x).strength(0.5))
+    .force('y', d3.forceY((d,i)=>targets[i].y).strength(0.5))
+    .force('collision', d3.forceCollide(d=>nodeR(d)+3))
+    .force('charge', d3.forceManyBody().strength(-40));
+
+  gLink.transition().duration(600).attr('stroke','rgba(0,0,0,0.06)').attr('stroke-width',0.6);
+
+  gSim.on('tick', () => {
+    gLink.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y)
+         .attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+    gNode.attr('transform',d=>`translate(${d.x},${d.y})`);
+  });
+  gSim.alpha(0.8).restart();
+}
+
+// ── mode: timeline ────────────────────────────────────────
+function applyTimeline() {
+  if (gSim) gSim.stop();
+  const W = window.innerWidth, H = window.innerHeight;
+  const nodes = gData.nodes;
+  const pad = 80;
+
+  const times = nodes.map(n=>n.created).filter(Boolean);
+  const tMin = Math.min(...times), tMax = Math.max(...times);
+  const xScale = d3.scaleLinear().domain([tMin,tMax]).range([pad, W-pad]);
+
+  // group by type for y position
+  const types = [...new Set(nodes.map(n=>n.type))];
+  const yScale = d3.scaleOrdinal().domain(types).range(
+    types.map((_,i) => pad + (i+1)*(H-pad*2)/(types.length+1))
+  );
+
+  const targets = nodes.map(n => ({
+    x: n.created ? xScale(n.created) : W/2,
+    y: yScale(n.type) + (Math.random()-0.5)*40
+  }));
+
+  gSim = d3.forceSimulation(nodes)
+    .force('x', d3.forceX((d,i)=>targets[i].x).strength(0.8))
+    .force('y', d3.forceY((d,i)=>targets[i].y).strength(0.8))
+    .force('collision', d3.forceCollide(d=>nodeR(d)+3));
+
+  gLink.transition().duration(600).attr('stroke','rgba(0,0,0,0.05)').attr('stroke-width',0.5);
+
+  gSim.on('tick', () => {
+    gLink.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y)
+         .attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+    gNode.attr('transform',d=>`translate(${d.x},${d.y})`);
+  });
+  gSim.alpha(0.8).restart();
+}
+
+// ── draw graph (init once) ────────────────────────────────
 function drawGraph(data) {
+  gData = data;
   const { nodes, links } = data;
   document.getElementById('node-count').textContent = nodes.length + ' nodes · ' + links.length + ' links';
 
@@ -273,64 +361,46 @@ function drawGraph(data) {
   svg.selectAll('*').remove();
   const W = window.innerWidth, H = window.innerHeight;
 
-  const g = svg.append('g');
+  gG = svg.append('g');
+  gZoom = d3.zoom().scaleExtent([0.1,4]).on('zoom', e => gG.attr('transform', e.transform));
+  svg.call(gZoom);
+  gSvg = svg;
 
-  // zoom
-  const zoom = d3.zoom().scaleExtent([0.1, 4]).on('zoom', e => g.attr('transform', e.transform));
-  svg.call(zoom);
-  document.getElementById('btn-reset-view').onclick = () => svg.transition().duration(500).call(zoom.transform, d3.zoomIdentity);
+  gLink = gG.append('g').selectAll('line').data(links).join('line')
+    .attr('stroke','rgba(0,0,0,0.1)').attr('stroke-width',0.8);
 
-  // simulation
-  const sim = d3.forceSimulation(nodes)
-    .force('link', d3.forceLink(links).id(d=>d.id).distance(d => d.type==='tag' ? 90 : 60).strength(d => d.type==='tag' ? 0.3 : 0.7))
-    .force('charge', d3.forceManyBody().strength(-180))
-    .force('center', d3.forceCenter(W/2, H/2))
-    .force('collision', d3.forceCollide(d => Math.max(18, d.title.length * 2.2)));
-
-  // links
-  const link = g.append('g').selectAll('line').data(links).join('line')
-    .attr('stroke', d => d.type==='relation' ? 'rgba(0,0,0,0.25)' : 'rgba(0,0,0,0.08)')
-    .attr('stroke-width', d => d.type==='relation' ? 1.5 : 0.8);
-
-  // nodes
-  const node = g.append('g').selectAll('g').data(nodes).join('g')
-    .attr('cursor', 'pointer')
+  gNode = gG.append('g').selectAll('g').data(nodes).join('g')
+    .attr('cursor','pointer')
     .call(d3.drag()
-      .on('start', (e,d) => { if(!e.active) sim.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; })
-      .on('drag',  (e,d) => { d.fx=e.x; d.fy=e.y; })
-      .on('end',   (e,d) => { if(!e.active) sim.alphaTarget(0); d.fx=null; d.fy=null; })
+      .on('start',(e,d)=>{ if(!e.active&&gSim) gSim.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; })
+      .on('drag', (e,d)=>{ d.fx=e.x; d.fy=e.y; })
+      .on('end',  (e,d)=>{ if(!e.active&&gSim) gSim.alphaTarget(0); d.fx=null; d.fy=null; })
     );
 
-  const r = d => Math.max(10, Math.min(22, 8 + d.tags.length * 2.5));
-
-  node.append('circle')
-    .attr('r', r)
+  gNode.append('circle')
+    .attr('r', nodeR)
     .attr('fill', nodeColor)
-    .attr('stroke', 'rgba(255,255,255,0.8)')
-    .attr('stroke-width', 1.5);
+    .attr('stroke','rgba(255,255,255,0.8)')
+    .attr('stroke-width',1.5);
 
-  node.append('text').attr('class','node-label')
-    .attr('dy', d => r(d) + 12)
-    .attr('text-anchor','middle')
-    .text(d => d.title.length > 18 ? d.title.slice(0,16)+'…' : d.title);
+  gNode.append('text').attr('class','node-label')
+    .attr('dy', d=>nodeR(d)+12).attr('text-anchor','middle')
+    .text(d=>d.title.length>18?d.title.slice(0,16)+'…':d.title);
 
-  // tooltip
-  const tt = document.getElementById('tooltip');
-  node.on('mouseenter', (e,d) => {
-    document.getElementById('tt-title').textContent = d.title;
-    document.getElementById('tt-type').textContent  = d.type.replace('_id','');
-    const tagsEl = document.getElementById('tt-tags');
-    tagsEl.innerHTML = d.tags.map(t=>`<span class="tt-tag">${t}</span>`).join('');
-    document.getElementById('tt-link').onclick = () => window.open(d.url,'_blank');
-    tt.style.display='block';
-    tt.style.left=(e.clientX+14)+'px'; tt.style.top=(e.clientY-10)+'px';
-  }).on('mouseleave', () => { tt.style.display='none'; });
+  gNode.on('mouseenter', showTooltip).on('mouseleave', hideTooltip);
 
-  sim.on('tick', () => {
-    link.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y)
-        .attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
-    node.attr('transform',d=>`translate(${d.x},${d.y})`);
+  applyForce();
+}
+
+// ── mode switch ───────────────────────────────────────────
+function setMode(mode) {
+  currentMode = mode;
+  ['force','radial','timeline'].forEach(m => {
+    document.getElementById('btn-'+m).classList.toggle('active', m===mode);
   });
+  if (mode==='force')    applyForce();
+  else if (mode==='radial')   applyRadial();
+  else if (mode==='timeline') applyTimeline();
 }
 
 // ── main flow ─────────────────────────────────────────────
@@ -346,16 +416,10 @@ document.getElementById('btn-go').addEventListener('click', async () => {
 
   try {
     let pages;
-    if (dbId) {
-      setStatus('querying database…');
-      pages = await fetchDatabase(dbId, key);
-    } else {
-      setStatus('searching all pages…');
-      pages = await fetchAllPages(key);
-    }
+    if (dbId) { setStatus('querying database…'); pages = await fetchDatabase(dbId, key); }
+    else       { setStatus('searching all pages…'); pages = await fetchAllPages(key); }
     setStatus(`building graph from ${pages.length} pages…`);
     const data = buildGraph(pages);
-
     document.getElementById('loading').style.display='none';
     document.getElementById('graph-wrap').style.display='block';
     document.getElementById('topbar').style.display='flex';
@@ -363,11 +427,16 @@ document.getElementById('btn-go').addEventListener('click', async () => {
   } catch(err) {
     document.getElementById('loading').style.display='none';
     document.getElementById('setup').style.display='flex';
-    errEl.textContent = err.message; errEl.style.display='block';
+    errEl.textContent=err.message; errEl.style.display='block';
   }
 });
 
+document.getElementById('btn-force').addEventListener('click',    ()=>setMode('force'));
+document.getElementById('btn-radial').addEventListener('click',   ()=>setMode('radial'));
+document.getElementById('btn-timeline').addEventListener('click', ()=>setMode('timeline'));
+document.getElementById('btn-reset-view').addEventListener('click', ()=>gSvg.transition().duration(500).call(gZoom.transform, d3.zoomIdentity));
 document.getElementById('btn-back').addEventListener('click', () => {
+  if (gSim) gSim.stop();
   document.getElementById('graph-wrap').style.display='none';
   document.getElementById('topbar').style.display='none';
   document.getElementById('setup').style.display='flex';
