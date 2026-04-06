@@ -449,9 +449,10 @@ function applyTimeline() {
     y:n.created?yScale(n.created):(padT+H-padB)/2
   }));
   gSim=d3.forceSimulation(nodes)
-    .force('x',d3.forceX((d,i)=>targets[i].x).strength(0.5))
-    .force('y',d3.forceY((d,i)=>targets[i].y).strength(0.9))
-    .force('collision',d3.forceCollide(d=>nodeR(d)+4));
+    .force('x',d3.forceX((d,i)=>targets[i].x).strength(0.15))
+    .force('y',d3.forceY((d,i)=>targets[i].y).strength(0.95))
+    .force('collision',d3.forceCollide(d=>nodeR(d)+18))
+    .force('charge',d3.forceManyBody().strength(-60));
   gLink.transition().duration(600).attr('stroke','rgba(0,0,0,0.04)').attr('stroke-width',0.5);
   gSim.on('tick',()=>{
     gLink.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
