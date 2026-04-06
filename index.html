@@ -5,82 +5,126 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Graph It</title>
 <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
 <style>
+@import url('https://cdn.jsdelivr.net/npm/@fontsource/noto-serif-sc@5.0.12/index.css');
+@import url('https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-sc@5.0.12/index.css');
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { background: #f5f2ee; font-family: 'Georgia', serif; overflow: hidden; }
+body { background: var(--bg); font-family: var(--font-serif); overflow: hidden; transition: background 0.4s; }
+
+/* themes */
+:root {
+  --bg: #f5f2ee; --surface: #fff; --border: rgba(0,0,0,0.08);
+  --text: #1a1a1a; --text-sub: rgba(0,0,0,0.38); --text-dim: rgba(0,0,0,0.2);
+  --tag-bg: #f0ede8; --tag-fg: rgba(0,0,0,0.5);
+  --node-a: #c8b8a2; --node-b: #a8c4b8; --node-c: #b8a8c4; --node-d: #c4b8a8;
+  --font-serif: 'Georgia', serif;
+  --font-sans: sans-serif;
+}
+body.theme-dark {
+  --bg: #111; --surface: #1c1c1c; --border: rgba(255,255,255,0.08);
+  --text: #e8e4de; --text-sub: rgba(255,255,255,0.35); --text-dim: rgba(255,255,255,0.15);
+  --tag-bg: #2a2a2a; --tag-fg: rgba(255,255,255,0.4);
+  --node-a: #7a6a58; --node-b: #5a7a6e; --node-c: #6a5a7a; --node-d: #7a6a58;
+}
+body.theme-kraft {
+  --bg: #d4b896; --surface: #c8a87a; --border: rgba(0,0,0,0.12);
+  --text: #2a1a0a; --text-sub: rgba(42,26,10,0.5); --text-dim: rgba(42,26,10,0.2);
+  --tag-bg: rgba(0,0,0,0.1); --tag-fg: rgba(42,26,10,0.6);
+  --node-a: #8a6a4a; --node-b: #6a8a7a; --node-c: #7a6a8a; --node-d: #8a7a6a;
+}
+body.theme-cyan {
+  --bg: #e8f4f4; --surface: #fff; --border: rgba(0,100,100,0.1);
+  --text: #0a2a2a; --text-sub: rgba(10,42,42,0.4); --text-dim: rgba(10,42,42,0.15);
+  --tag-bg: #d0eaea; --tag-fg: rgba(10,42,42,0.5);
+  --node-a: #7ab8b8; --node-b: #8ab8a8; --node-c: #a8a8c8; --node-d: #b8c8b8;
+}
+body.font-songti { --font-serif: 'Noto Serif SC', 'STSong', serif; }
+body.font-heiti  { --font-serif: 'Noto Sans SC', 'STHeiti', sans-serif; }
 
 #setup {
   position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
-  background: #f5f2ee; z-index: 200;
+  background: var(--bg); z-index: 200;
 }
 .setup-card {
-  background: #fff; border: 1px solid rgba(0,0,0,0.08);
+  background: var(--surface); border: 1px solid var(--border);
   border-radius: 20px; padding: 40px 44px; width: 420px;
   box-shadow: 0 4px 32px rgba(0,0,0,0.07);
 }
-.setup-card h1 { font-size: 28px; font-weight: 400; letter-spacing: -0.5px; color: #1a1a1a; margin-bottom: 6px; }
-.setup-card .sub { color: rgba(0,0,0,0.38); font-size: 13px; margin-bottom: 32px; font-family: sans-serif; }
+.setup-card h1 { font-size: 28px; font-weight: 400; letter-spacing: -0.5px; color: var(--text); margin-bottom: 6px; }
+.setup-card .sub { color: var(--text-sub); font-size: 13px; margin-bottom: 32px; font-family: var(--font-sans); }
 .field { margin-bottom: 18px; }
-.field label { display: block; font-size: 11px; color: rgba(0,0,0,0.4); font-family: sans-serif; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 6px; }
+.field label { display: block; font-size: 11px; color: var(--text-sub); font-family: var(--font-sans); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 6px; }
 .field input {
-  width: 100%; padding: 10px 14px; border: 1px solid rgba(0,0,0,0.12);
+  width: 100%; padding: 10px 14px; border: 1px solid var(--border);
   border-radius: 10px; font-size: 13px; font-family: monospace;
-  background: #fafafa; color: #222; outline: none;
+  background: var(--bg); color: var(--text); outline: none;
 }
-.field input:focus { border-color: rgba(0,0,0,0.3); background: #fff; }
-.field .hint { font-size: 11px; color: rgba(0,0,0,0.3); margin-top: 5px; font-family: sans-serif; }
+.field input:focus { border-color: var(--text); }
+.field .hint { font-size: 11px; color: var(--text-dim); margin-top: 5px; font-family: var(--font-sans); }
 .remember-row { display: flex; align-items: center; gap: 8px; margin-bottom: 18px; }
-.remember-row input[type=checkbox] { width: 14px; height: 14px; cursor: pointer; accent-color: #1a1a1a; }
-.remember-row label { font-size: 12px; color: rgba(0,0,0,0.45); font-family: sans-serif; cursor: pointer; }
+.remember-row input[type=checkbox] { width: 14px; height: 14px; cursor: pointer; accent-color: var(--text); }
+.remember-row label { font-size: 12px; color: var(--text-sub); font-family: var(--font-sans); cursor: pointer; }
 .btn-go {
-  width: 100%; padding: 12px; background: #1a1a1a; color: #fff;
+  width: 100%; padding: 12px; background: var(--text); color: var(--bg);
   border: none; border-radius: 10px; font-size: 14px; cursor: pointer;
-  font-family: sans-serif; letter-spacing: 0.3px; margin-top: 4px;
+  font-family: var(--font-sans); letter-spacing: 0.3px; margin-top: 4px;
 }
-.btn-go:hover { background: #333; }
-#setup-error { color: #c0392b; font-size: 12px; font-family: sans-serif; margin-top: 10px; display: none; }
+.btn-go:hover { opacity: 0.8; }
+#setup-error { color: #c0392b; font-size: 12px; font-family: var(--font-sans); margin-top: 10px; display: none; }
 
 #graph-wrap { position: fixed; inset: 0; display: none; }
 svg { width: 100%; height: 100%; }
-.node-label { font-family: sans-serif; font-size: 11px; fill: rgba(0,0,0,0.55); pointer-events: none; user-select: none; }
+.node-label { font-family: var(--font-sans); font-size: 11px; fill: var(--text-sub); pointer-events: none; user-select: none; }
 
 #tooltip {
-  position: fixed; background: #fff; border: 1px solid rgba(0,0,0,0.1);
+  position: fixed; background: var(--surface); border: 1px solid var(--border);
   border-radius: 0; padding: 16px 18px; width: 300px;
   box-shadow: 0 6px 28px rgba(0,0,0,0.12);
-  z-index: 100; font-family: sans-serif;
+  z-index: 100; font-family: var(--font-sans);
   opacity: 0; pointer-events: none; transition: opacity 0.15s;
 }
 #tooltip.visible { opacity: 1; pointer-events: all; }
-#tooltip .tt-title { font-size: 14px; color: #1a1a1a; font-weight: 600; margin-bottom: 4px; line-height: 1.4; }
-#tooltip .tt-type  { font-size: 10px; color: rgba(0,0,0,0.35); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+#tooltip .tt-title { font-size: 14px; color: var(--text); font-weight: 600; margin-bottom: 4px; line-height: 1.4; font-family: var(--font-serif); }
+#tooltip .tt-type  { font-size: 10px; color: var(--text-sub); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
 #tooltip .tt-tags  { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
-#tooltip .tt-tag   { background: #f0ede8; color: rgba(0,0,0,0.5); font-size: 10px; padding: 2px 8px; border-radius: 20px; }
-#tooltip .tt-excerpt { font-size: 12px; color: rgba(0,0,0,0.5); line-height: 1.6; margin-bottom: 12px; max-height: 72px; overflow: hidden; }
-#tooltip .tt-footer { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid rgba(0,0,0,0.06); padding-top: 10px; }
-#tooltip .tt-date  { font-size: 10px; color: rgba(0,0,0,0.3); }
-#tooltip .tt-link  { font-size: 11px; color: #1a1a1a; background: #f5f2ee; padding: 5px 12px; border-radius: 20px; cursor: pointer; text-decoration: none; border: 1px solid rgba(0,0,0,0.08); }
-#tooltip .tt-link:hover { background: #1a1a1a; color: #fff; }
+#tooltip .tt-tag   { background: var(--tag-bg); color: var(--tag-fg); font-size: 10px; padding: 2px 8px; border-radius: 20px; }
+#tooltip .tt-excerpt { font-size: 12px; color: var(--text-sub); line-height: 1.6; margin-bottom: 12px; max-height: 72px; overflow: hidden; }
+#tooltip .tt-footer { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 10px; }
+#tooltip .tt-date  { font-size: 10px; color: var(--text-dim); }
+#tooltip .tt-link  { font-size: 11px; color: var(--text); background: var(--bg); padding: 5px 12px; border-radius: 20px; cursor: pointer; text-decoration: none; border: 1px solid var(--border); }
+#tooltip .tt-link:hover { background: var(--text); color: var(--bg); }
 
 #topbar {
   position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-  display: none; align-items: center; gap: 8px;
+  display: none; align-items: center; gap: 6px; flex-wrap: nowrap;
   background: rgba(255,255,255,0.88); backdrop-filter: blur(12px);
-  border: 1px solid rgba(0,0,0,0.08); border-radius: 40px;
+  border: 1px solid var(--border); border-radius: 40px;
   padding: 8px 14px; z-index: 100;
 }
-#topbar h2 { font-size: 15px; font-weight: 400; color: #1a1a1a; letter-spacing: -0.3px; }
-#topbar .sep { color: rgba(0,0,0,0.2); font-size: 12px; }
-#node-count { font-size: 12px; color: rgba(0,0,0,0.38); font-family: sans-serif; }
-.tb-btn { background: none; border: 1px solid rgba(0,0,0,0.12); color: rgba(0,0,0,0.5); padding: 4px 12px; border-radius: 20px; cursor: pointer; font-size: 11px; font-family: sans-serif; transition: all 0.15s; }
+body.theme-dark #topbar { background: rgba(28,28,28,0.92); }
+#topbar h2 { font-size: 15px; font-weight: 400; color: var(--text); letter-spacing: -0.3px; white-space: nowrap; }
+#topbar .sep { color: var(--text-dim); font-size: 12px; }
+#node-count { font-size: 12px; color: var(--text-sub); font-family: var(--font-sans); white-space: nowrap; }
+.tb-btn { background: none; border: 1px solid var(--border); color: var(--text-sub); padding: 4px 10px; border-radius: 20px; cursor: pointer; font-size: 11px; font-family: var(--font-sans); transition: all 0.15s; white-space: nowrap; }
 .tb-btn:hover { background: rgba(0,0,0,0.05); }
-.tb-btn.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+.tb-btn.active { background: var(--text); color: var(--bg); border-color: var(--text); }
 
-#loading { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: #f5f2ee; z-index: 150; flex-direction: column; gap: 16px; }
-.spinner { width: 32px; height: 32px; border: 2px solid rgba(0,0,0,0.1); border-top-color: #1a1a1a; border-radius: 50%; animation: spin 0.8s linear infinite; }
+/* search bar */
+#search-wrap { position: relative; }
+#search-inp {
+  padding: 4px 10px; border: 1px solid var(--border); border-radius: 20px;
+  font-size: 11px; font-family: var(--font-sans); background: var(--bg);
+  color: var(--text); outline: none; width: 120px; transition: width 0.2s;
+}
+#search-inp:focus { width: 180px; border-color: var(--text); }
+
+#loading { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: var(--bg); z-index: 150; flex-direction: column; gap: 16px; }
+.spinner { width: 32px; height: 32px; border: 2px solid var(--border); border-top-color: var(--text); border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-#ld-title { font-size: 18px; color: #1a1a1a; }
-#ld-status { font-size: 13px; color: rgba(0,0,0,0.38); font-family: sans-serif; }
+#ld-title { font-size: 18px; color: var(--text); }
+#ld-status { font-size: 13px; color: var(--text-sub); font-family: var(--font-sans); }
 </style>
 </head>
 <body>
@@ -119,12 +163,24 @@ svg { width: 100%; height: 100%; }
 <div id="topbar">
   <h2>Graph It</h2>
   <span class="sep">·</span>
-  <span id="node-count">0 nodes</span>
+  <span id="node-count"></span>
   <span class="sep">·</span>
   <button class="tb-btn active" id="btn-force">force</button>
   <button class="tb-btn" id="btn-radial">radial</button>
   <button class="tb-btn" id="btn-timeline">timeline</button>
   <span class="sep">·</span>
+  <button class="tb-btn active" id="btn-links-all">all links</button>
+  <button class="tb-btn" id="btn-links-rel">relation</button>
+  <button class="tb-btn" id="btn-links-tag">tag</button>
+  <span class="sep">·</span>
+  <button class="tb-btn active" id="btn-size-tags">by tags</button>
+  <button class="tb-btn" id="btn-size-age">by age</button>
+  <button class="tb-btn" id="btn-size-title">by title</button>
+  <span class="sep">·</span>
+  <div id="search-wrap"><input type="text" id="search-inp" placeholder="search…"></div>
+  <span class="sep">·</span>
+  <button class="tb-btn" id="btn-theme">theme</button>
+  <button class="tb-btn" id="btn-font">font</button>
   <button class="tb-btn" id="btn-reset-view">reset</button>
   <button class="tb-btn" id="btn-back">← back</button>
 </div>
@@ -144,6 +200,25 @@ const NOTION_PROXY = 'https://notionproxy.daftlamb.workers.dev/v1';
 const NOTION_VERSION = '2022-06-28';
 const LS_KEY = 'graphit_api_key';
 
+// themes cycle
+const THEMES = ['', 'theme-dark', 'theme-kraft', 'theme-cyan'];
+const THEME_LABELS = ['light', 'dark', 'kraft', 'cyan'];
+let themeIdx = 0;
+
+// fonts cycle
+const FONTS = ['', 'font-songti', 'font-heiti'];
+const FONT_LABELS = ['georgia', 'songti', 'heiti'];
+let fontIdx = 0;
+
+// link filter
+let linkFilter = 'all'; // all | relation | tag
+
+// size mode
+let sizeMode = 'tags'; // tags | age | title
+
+// search
+let searchQuery = '';
+
 window.addEventListener('DOMContentLoaded', () => {
   const saved = localStorage.getItem(LS_KEY);
   if (saved) { document.getElementById('inp-key').value = saved; document.getElementById('chk-remember').checked = true; }
@@ -151,197 +226,167 @@ window.addEventListener('DOMContentLoaded', () => {
 
 async function notionFetch(path, key, body=null) {
   const url = NOTION_PROXY + path;
-  const opts = { method: body ? 'POST' : 'GET', headers: { 'Authorization': 'Bearer ' + key, 'Notion-Version': NOTION_VERSION, 'Content-Type': 'application/json' } };
+  const opts = { method: body?'POST':'GET', headers: { 'Authorization':'Bearer '+key, 'Notion-Version':NOTION_VERSION, 'Content-Type':'application/json' } };
   if (body) opts.body = JSON.stringify(body);
   const r = await fetch(url, opts);
-  if (!r.ok) throw new Error('Notion API ' + r.status + ': ' + await r.text());
+  if (!r.ok) throw new Error('Notion API '+r.status+': '+await r.text());
   return r.json();
 }
 
 function setStatus(s) { document.getElementById('ld-status').textContent = s; }
 
 async function fetchDatabase(dbId, key) {
-  const pages = []; let cursor;
+  const pages=[]; let cursor;
   do {
-    const body = { page_size: 100 };
-    if (cursor) body.start_cursor = cursor;
-    const res = await notionFetch('/databases/'+dbId+'/query', key, body);
-    pages.push(...res.results);
-    cursor = res.has_more ? res.next_cursor : undefined;
-  } while (cursor);
+    const body={page_size:100}; if(cursor) body.start_cursor=cursor;
+    const res=await notionFetch('/databases/'+dbId+'/query',key,body);
+    pages.push(...res.results); cursor=res.has_more?res.next_cursor:undefined;
+  } while(cursor);
   return pages;
 }
 
 async function fetchAllPages(key) {
-  const pages = []; let cursor;
+  const pages=[]; let cursor;
   do {
-    const body = { page_size: 100, filter: { value: 'page', property: 'object' } };
-    if (cursor) body.start_cursor = cursor;
-    const res = await notionFetch('/search', key, body);
-    pages.push(...res.results);
-    cursor = res.has_more ? res.next_cursor : undefined;
-  } while (cursor);
+    const body={page_size:100,filter:{value:'page',property:'object'}}; if(cursor) body.start_cursor=cursor;
+    const res=await notionFetch('/search',key,body);
+    pages.push(...res.results); cursor=res.has_more?res.next_cursor:undefined;
+  } while(cursor);
   return pages;
 }
 
 async function fetchExcerpt(pageId, key) {
   try {
-    const res = await notionFetch('/blocks/'+pageId+'/children?page_size=5', key);
-    const texts = [];
+    const res=await notionFetch('/blocks/'+pageId+'/children?page_size=5',key);
+    const texts=[];
     for (const block of res.results) {
-      const rt = block[block.type]?.rich_text;
-      if (rt && rt.length > 0) { texts.push(rt.map(t=>t.plain_text).join('')); if (texts.join(' ').length > 120) break; }
+      const rt=block[block.type]?.rich_text;
+      if(rt&&rt.length>0){texts.push(rt.map(t=>t.plain_text).join(''));if(texts.join(' ').length>120)break;}
     }
-    return texts.join(' ').slice(0, 140) || '';
+    return texts.join(' ').slice(0,140)||'';
   } catch { return ''; }
 }
 
 function getTitle(page) {
-  if (!page.properties) return 'Untitled';
-  for (const prop of Object.values(page.properties)) {
-    if (prop.type === 'title' && prop.title && prop.title.length > 0) return prop.title.map(t=>t.plain_text).join('');
-  }
+  if(!page.properties) return 'Untitled';
+  for(const prop of Object.values(page.properties))
+    if(prop.type==='title'&&prop.title&&prop.title.length>0) return prop.title.map(t=>t.plain_text).join('');
   return 'Untitled';
 }
 
 function getTags(page) {
-  if (!page.properties) return [];
-  const tags = [];
-  for (const prop of Object.values(page.properties)) {
-    if (prop.type === 'multi_select' && prop.multi_select) prop.multi_select.forEach(v => v && tags.push(v.name));
-    else if (prop.type === 'select' && prop.select) tags.push(prop.select.name);
+  if(!page.properties) return [];
+  const tags=[];
+  for(const prop of Object.values(page.properties)){
+    if(prop.type==='multi_select'&&prop.multi_select) prop.multi_select.forEach(v=>v&&tags.push(v.name));
+    else if(prop.type==='select'&&prop.select) tags.push(prop.select.name);
   }
   return tags;
 }
 
 function buildGraph(pages) {
-  const nodes = [], links = [], tagMap = {};
-  const idSet = new Set(pages.map(p => p.id));
-  pages.forEach(page => {
-    const title = getTitle(page), tags = getTags(page);
-    const type = page.parent?.type || 'page';
-    const created = new Date(page.created_time).getTime();
-    nodes.push({ id: page.id, title, tags, type, url: page.url, created, excerpt: '' });
-    tags.forEach(t => { if (!tagMap[t]) tagMap[t]=[]; tagMap[t].push(page.id); });
-    if (page.properties) {
-      for (const prop of Object.values(page.properties)) {
-        if (prop.type === 'relation' && prop.relation)
-          prop.relation.forEach(rel => { if (idSet.has(rel.id)) links.push({ source: page.id, target: rel.id, type: 'relation' }); });
-      }
+  const nodes=[],links=[],tagMap={};
+  const idSet=new Set(pages.map(p=>p.id));
+  const now=Date.now();
+  pages.forEach(page=>{
+    const title=getTitle(page),tags=getTags(page);
+    const type=page.parent?.type||'page';
+    const created=new Date(page.created_time).getTime();
+    const ageScore=1-(created-Math.min(...pages.map(p=>new Date(p.created_time).getTime())))/(now-Math.min(...pages.map(p=>new Date(p.created_time).getTime()))||1);
+    nodes.push({id:page.id,title,tags,type,url:page.url,created,ageScore,excerpt:''});
+    tags.forEach(t=>{if(!tagMap[t])tagMap[t]=[];tagMap[t].push(page.id);});
+    if(page.properties){
+      for(const prop of Object.values(page.properties))
+        if(prop.type==='relation'&&prop.relation)
+          prop.relation.forEach(rel=>{if(idSet.has(rel.id))links.push({source:page.id,target:rel.id,type:'relation'});});
     }
   });
-  Object.values(tagMap).forEach(ids => {
-    if (ids.length < 2) return;
-    for (let i=0;i<ids.length;i++) for (let j=i+1;j<ids.length;j++) links.push({ source: ids[i], target: ids[j], type: 'tag' });
+  Object.values(tagMap).forEach(ids=>{
+    if(ids.length<2)return;
+    for(let i=0;i<ids.length;i++) for(let j=i+1;j<ids.length;j++) links.push({source:ids[i],target:ids[j],type:'tag'});
   });
-  return { nodes, links };
+  return {nodes,links};
 }
 
-const TYPE_COLORS = { database_id:'#c8b8a2', page_id:'#a8c4b8', workspace:'#b8a8c4', default:'#c4b8a8' };
-function nodeColor(d) { return TYPE_COLORS[d.type] || TYPE_COLORS.default; }
-function nodeR(d) { return Math.max(16, Math.min(34, 14 + d.tags.length * 3)); }
-
-let gData=null, gSvg=null, gG=null, gZoom=null, gNode=null, gLink=null, gSim=null, currentKey='';
-const expandedNodes = new Set();
-
-async function expandNode(d) {
-  if (expandedNodes.has(d.id)) {
-    // collapse: remove children added by this node
-    const toRemove = new Set(gData.nodes.filter(n=>n.parentId===d.id).map(n=>n.id));
-    gData.nodes = gData.nodes.filter(n=>!toRemove.has(n.id));
-    gData.links = gData.links.filter(l=>{
-      const sid = typeof l.source==='object'?l.source.id:l.source;
-      const tid = typeof l.target==='object'?l.target.id:l.target;
-      return !toRemove.has(sid) && !toRemove.has(tid);
-    });
-    expandedNodes.delete(d.id);
-    refreshGraph();
-    return;
-  }
-  try {
-    const res = await notionFetch('/blocks/'+d.id+'/children?page_size=20', currentKey);
-    const childPages = res.results.filter(b=>b.type==='child_page');
-    if (childPages.length === 0) return;
-    const newNodes = childPages.map(b=>({
-      id: b.id, title: b.child_page?.title||'Untitled',
-      tags: [], type: 'page_id', url: 'https://notion.so/'+b.id.replace(/-/g,''),
-      created: new Date(b.created_time).getTime(), excerpt: '', parentId: d.id,
-      x: d.x + (Math.random()-0.5)*80, y: d.y + (Math.random()-0.5)*80
-    }));
-    const newLinks = newNodes.map(n=>({ source: d.id, target: n.id, type: 'child' }));
-    gData.nodes.push(...newNodes);
-    gData.links.push(...newLinks);
-    expandedNodes.add(d.id);
-    refreshGraph();
-  } catch(e) { console.warn('expand failed', e); }
+// node radius by mode
+function nodeR(d) {
+  if(sizeMode==='tags')  return Math.max(16,Math.min(34,14+d.tags.length*3));
+  if(sizeMode==='age')   return Math.max(12,Math.min(34,12+(d.ageScore||0)*22));
+  if(sizeMode==='title') return Math.max(12,Math.min(34,10+d.title.length*0.8));
+  return 18;
 }
 
-function refreshGraph() {
-  const {nodes, links} = gData;
-  // rebind data
-  gLink = gLink.data(links, d=>(typeof d.source==='object'?d.source.id:d.source)+'-'+(typeof d.target==='object'?d.target.id:d.target));
-  gLink.exit().remove();
-  gLink = gLink.enter().append('line').attr('stroke','rgba(0,0,0,0.15)').attr('stroke-width',1).merge(gLink);
+const TYPE_COLORS={database_id:'var(--node-a)',page_id:'var(--node-b)',workspace:'var(--node-c)',default:'var(--node-d)'};
+function nodeColor(d){return TYPE_COLORS[d.type]||TYPE_COLORS.default;}
 
-  gNode = gNode.data(nodes, d=>d.id);
-  gNode.exit().remove();
-  const newNode = gNode.enter().append('g').attr('cursor','pointer')
-    .call(d3.drag()
-      .on('start',(e,d)=>{if(!e.active&&gSim)gSim.alphaTarget(0.3).restart();d.fx=d.x;d.fy=d.y;})
-      .on('drag', (e,d)=>{d.fx=e.x;d.fy=e.y;})
-      .on('end',  (e,d)=>{if(!e.active&&gSim)gSim.alphaTarget(0);d.fx=null;d.fy=null;})
-    );
-  newNode.append('circle').attr('r',nodeR).attr('fill',nodeColor)
-    .attr('stroke','rgba(255,255,255,0.8)').attr('stroke-width',2);
-  newNode.append('text').attr('class','node-label')
-    .attr('dy',d=>nodeR(d)+13).attr('text-anchor','middle')
-    .text(d=>d.title.length>18?d.title.slice(0,16)+'…':d.title);
-  newNode.on('mouseenter',showTooltip).on('mouseleave',scheduleHide);
-  newNode.on('click',(e,d)=>{ e.stopPropagation(); expandNode(d); });
-  gNode = newNode.merge(gNode);
-
-  if (gSim) {
-    gSim.nodes(nodes);
-    gSim.force('link').links(links);
-    gSim.alpha(0.4).restart();
-  }
-}
+let gData=null,gSvg=null,gG=null,gZoom=null,gNode=null,gLink=null,gSim=null,currentKey='';
+const expandedNodes=new Set();
 let tooltipTimer=null;
-const ttEl = document.getElementById('tooltip');
+const ttEl=document.getElementById('tooltip');
 
-function positionTooltip(x, y) {
-  const W=window.innerWidth, H=window.innerHeight;
-  let left=x+16, top=y-10;
-  if (left+310>W) left=x-316;
-  if (top+220>H) top=H-230;
-  ttEl.style.left=left+'px'; ttEl.style.top=top+'px';
+function positionTooltip(x,y){
+  const W=window.innerWidth,H=window.innerHeight;
+  let left=x+16,top=y-10;
+  if(left+310>W)left=x-316; if(top+220>H)top=H-230;
+  ttEl.style.left=left+'px';ttEl.style.top=top+'px';
 }
-
-function showTooltip(e, d) {
+function showTooltip(e,d){
   clearTimeout(tooltipTimer);
-  document.getElementById('tt-title').textContent = d.title;
-  document.getElementById('tt-type').textContent  = d.type.replace('_id','');
-  document.getElementById('tt-tags').innerHTML    = d.tags.map(t=>`<span class="tt-tag">${t}</span>`).join('');
-  document.getElementById('tt-date').textContent  = d.created ? new Date(d.created).toLocaleDateString() : '';
-  document.getElementById('tt-link').href         = d.url;
-  const excerptEl = document.getElementById('tt-excerpt');
-  if (d.excerpt) { excerptEl.textContent = d.excerpt; }
-  else { excerptEl.textContent = '…'; fetchExcerpt(d.id, currentKey).then(text => { d.excerpt=text; excerptEl.textContent=text||''; }); }
-  positionTooltip(e.clientX, e.clientY);
+  document.getElementById('tt-title').textContent=d.title;
+  document.getElementById('tt-type').textContent=d.type.replace('_id','');
+  document.getElementById('tt-tags').innerHTML=d.tags.map(t=>`<span class="tt-tag">${t}</span>`).join('');
+  document.getElementById('tt-date').textContent=d.created?new Date(d.created).toLocaleDateString():'';
+  document.getElementById('tt-link').href=d.url;
+  const excerptEl=document.getElementById('tt-excerpt');
+  if(d.excerpt){excerptEl.textContent=d.excerpt;}
+  else{excerptEl.textContent='…';fetchExcerpt(d.id,currentKey).then(text=>{d.excerpt=text;excerptEl.textContent=text||'';});}
+  positionTooltip(e.clientX,e.clientY);
   ttEl.classList.add('visible');
 }
+function scheduleHide(){tooltipTimer=setTimeout(()=>ttEl.classList.remove('visible'),200);}
+ttEl.addEventListener('mouseenter',()=>clearTimeout(tooltipTimer));
+ttEl.addEventListener('mouseleave',scheduleHide);
 
-function scheduleHide() { tooltipTimer = setTimeout(() => ttEl.classList.remove('visible'), 200); }
-ttEl.addEventListener('mouseenter', () => clearTimeout(tooltipTimer));
-ttEl.addEventListener('mouseleave', scheduleHide);
+// ── search highlight ──────────────────────────────────────
+function applySearch(q) {
+  searchQuery = q.toLowerCase().trim();
+  if (!gNode) return;
+  gNode.selectAll('circle').attr('opacity', d => {
+    if (!searchQuery) return 1;
+    return (d.title.toLowerCase().includes(searchQuery) || d.tags.some(t=>t.toLowerCase().includes(searchQuery))) ? 1 : 0.12;
+  });
+  gNode.selectAll('text').attr('opacity', d => {
+    if (!searchQuery) return 1;
+    return (d.title.toLowerCase().includes(searchQuery) || d.tags.some(t=>t.toLowerCase().includes(searchQuery))) ? 1 : 0;
+  });
+  gLink.attr('opacity', !searchQuery ? 1 : 0.05);
+}
 
+// ── link filter ───────────────────────────────────────────
+function applyLinkFilter() {
+  if (!gLink) return;
+  gLink.attr('display', d => {
+    if (linkFilter==='all') return null;
+    return d.type===linkFilter ? null : 'none';
+  });
+}
+
+// ── size update ───────────────────────────────────────────
+function applySizeMode() {
+  if (!gNode) return;
+  gNode.selectAll('circle').transition().duration(400).attr('r', nodeR);
+  gNode.selectAll('text').transition().duration(400).attr('dy', d=>nodeR(d)+13);
+  if (gSim) gSim.force('collision', d3.forceCollide(d=>nodeR(d)+4)).alpha(0.3).restart();
+}
+
+// ── mode: force ───────────────────────────────────────────
 function applyForce() {
   if (gSim) gSim.stop();
-  const W=window.innerWidth, H=window.innerHeight;
-  const {nodes,links}=gData;
+  gG.selectAll('.tl-deco').remove();
+  const W=window.innerWidth,H=window.innerHeight,{nodes,links}=gData;
   gSim=d3.forceSimulation(nodes)
-    .force('link',d3.forceLink(links).id(d=>d.id).distance(d=>d.type==='tag'?90:60).strength(d=>d.type==='tag'?0.3:0.7))
-    .force('charge',d3.forceManyBody().strength(-200))
+    .force('link',d3.forceLink(links).id(d=>d.id).distance(d=>d.type==='tag'?100:65).strength(d=>d.type==='tag'?0.2:0.7))
+    .force('charge',d3.forceManyBody().strength(-220))
     .force('center',d3.forceCenter(W/2,H/2))
     .force('collision',d3.forceCollide(d=>nodeR(d)+5));
   gLink.transition().duration(600)
@@ -352,58 +397,62 @@ function applyForce() {
     gNode.attr('transform',d=>`translate(${d.x},${d.y})`);
   });
   gSim.alpha(0.8).restart();
+  applyLinkFilter();
 }
 
+// ── mode: radial ──────────────────────────────────────────
 function applyRadial() {
   if (gSim) gSim.stop();
-  const W=window.innerWidth, H=window.innerHeight;
-  const cx=W/2, cy=H/2, R=Math.min(W,H)*0.38;
+  gG.selectAll('.tl-deco').remove();
+  const W=window.innerWidth,H=window.innerHeight;
+  const cx=W/2,cy=H/2,R=Math.min(W,H)*0.42;
   const nodes=gData.nodes;
   const tagCount={};
   nodes.forEach(n=>n.tags.forEach(t=>{tagCount[t]=(tagCount[t]||0)+1;}));
   const topTags=Object.entries(tagCount).sort((a,b)=>b[1]-a[1]).slice(0,12).map(e=>e[0]);
-  const tagIndex={};
-  topTags.forEach((t,i)=>tagIndex[t]=i);
+  const tagIndex={};topTags.forEach((t,i)=>tagIndex[t]=i);
   const targets=nodes.map(n=>{
     const tag=n.tags.find(t=>tagIndex[t]!==undefined);
-    if (tag!==undefined) {
-      const angle=(tagIndex[tag]/topTags.length)*Math.PI*2-Math.PI/2;
-      const r=R*(0.5+Math.random()*0.5);
-      return {x:cx+Math.cos(angle)*r, y:cy+Math.sin(angle)*r};
+    if(tag!==undefined){
+      const angle=(tagIndex[tag]/Math.max(topTags.length,1))*Math.PI*2-Math.PI/2;
+      const r=R*(0.6+Math.random()*0.4);
+      return {x:cx+Math.cos(angle)*r,y:cy+Math.sin(angle)*r};
     }
-    return {x:cx+(Math.random()-0.5)*80, y:cy+(Math.random()-0.5)*80};
+    // no tag: place near center but not exactly center
+    const a=Math.random()*Math.PI*2;
+    return {x:cx+Math.cos(a)*R*0.25,y:cy+Math.sin(a)*R*0.25};
   });
   gSim=d3.forceSimulation(nodes)
-    .force('x',d3.forceX((d,i)=>targets[i].x).strength(0.5))
-    .force('y',d3.forceY((d,i)=>targets[i].y).strength(0.5))
-    .force('collision',d3.forceCollide(d=>nodeR(d)+4))
-    .force('charge',d3.forceManyBody().strength(-40));
+    .force('x',d3.forceX((d,i)=>targets[i].x).strength(0.45))
+    .force('y',d3.forceY((d,i)=>targets[i].y).strength(0.45))
+    .force('collision',d3.forceCollide(d=>nodeR(d)+6))
+    .force('charge',d3.forceManyBody().strength(-80));
   gLink.transition().duration(600).attr('stroke','rgba(0,0,0,0.06)').attr('stroke-width',0.6);
   gSim.on('tick',()=>{
     gLink.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
     gNode.attr('transform',d=>`translate(${d.x},${d.y})`);
   });
   gSim.alpha(0.8).restart();
+  applyLinkFilter();
 }
 
+// ── mode: timeline ────────────────────────────────────────
 function applyTimeline() {
   if (gSim) gSim.stop();
-  const W=window.innerWidth, H=window.innerHeight;
-  const padT=80, padB=80, axisX=72;
+  const W=window.innerWidth,H=window.innerHeight;
+  const padT=80,padB=80,axisX=72;
   const nodes=gData.nodes;
   gG.selectAll('.tl-deco').remove();
   const times=nodes.map(n=>n.created).filter(Boolean);
-  const tMin=Math.min(...times), tMax=Math.max(...times);
+  const tMin=Math.min(...times),tMax=Math.max(...times);
   const yScale=d3.scaleLinear().domain([tMin,tMax]).range([padT,H-padB]);
   const deco=gG.append('g').attr('class','tl-deco');
-  // vertical axis line
   deco.append('line').attr('x1',axisX).attr('x2',axisX).attr('y1',padT).attr('y2',H-padB)
     .attr('stroke','rgba(0,0,0,0.15)').attr('stroke-width',1);
-  // year labels on left
-  const y0=new Date(tMin).getFullYear(), y1=new Date(tMax).getFullYear();
-  for (let y=y0; y<=y1; y++) {
+  const y0=new Date(tMin).getFullYear(),y1=new Date(tMax).getFullYear();
+  for(let y=y0;y<=y1;y++){
     const ty=yScale(new Date(y+'-01-01').getTime());
-    if (ty<padT||ty>H-padB) continue;
+    if(ty<padT||ty>H-padB)continue;
     deco.append('line').attr('x1',axisX-6).attr('x2',axisX+6).attr('y1',ty).attr('y2',ty)
       .attr('stroke','rgba(0,0,0,0.2)').attr('stroke-width',1);
     deco.append('text').attr('x',axisX-14).attr('y',ty+6)
@@ -412,11 +461,10 @@ function applyTimeline() {
       .attr('fill',y===y0||y===y1?'rgba(0,0,0,0.1)':'rgba(0,0,0,0.06)')
       .attr('font-weight','700').text(y);
   }
-  // nodes: y = time, x = scatter to the right of axis
   const seed=nodes.map((_,i)=>((Math.sin(i*127.1)*43758.5453)%1+1)%1);
   const targets=nodes.map((n,i)=>({
-    x: axisX + 40 + seed[i]*(W - axisX - 80),
-    y: n.created ? yScale(n.created) : (padT+H-padB)/2
+    x:axisX+40+seed[i]*(W-axisX-80),
+    y:n.created?yScale(n.created):(padT+H-padB)/2
   }));
   gSim=d3.forceSimulation(nodes)
     .force('x',d3.forceX((d,i)=>targets[i].x).strength(0.5))
@@ -428,61 +476,107 @@ function applyTimeline() {
     gNode.attr('transform',d=>`translate(${d.x},${d.y})`);
   });
   gSim.alpha(0.8).restart();
+  applyLinkFilter();
 }
 
-function drawGraph(data) {
-  gData=data;
-  const {nodes,links}=data;
-  document.getElementById('node-count').textContent=nodes.length+' nodes · '+links.length+' links';
-  const svg=d3.select('#svg');
-  svg.selectAll('*').remove();
-  gG=svg.append('g');
-  gZoom=d3.zoom().scaleExtent([0.1,4]).on('zoom',e=>gG.attr('transform',e.transform));
-  svg.call(gZoom);
-  gSvg=svg;
-  gLink=gG.append('g').selectAll('line').data(links).join('line')
-    .attr('stroke','rgba(0,0,0,0.1)').attr('stroke-width',0.8);
-  gNode=gG.append('g').selectAll('g').data(nodes).join('g')
-    .attr('cursor','pointer')
+// ── expand/collapse child pages ───────────────────────────
+async function expandNode(d) {
+  if(expandedNodes.has(d.id)){
+    const toRemove=new Set(gData.nodes.filter(n=>n.parentId===d.id).map(n=>n.id));
+    gData.nodes=gData.nodes.filter(n=>!toRemove.has(n.id));
+    gData.links=gData.links.filter(l=>{
+      const sid=typeof l.source==='object'?l.source.id:l.source;
+      const tid=typeof l.target==='object'?l.target.id:l.target;
+      return !toRemove.has(sid)&&!toRemove.has(tid);
+    });
+    expandedNodes.delete(d.id);
+    refreshGraph();return;
+  }
+  try {
+    const res=await notionFetch('/blocks/'+d.id+'/children?page_size=20',currentKey);
+    const childPages=res.results.filter(b=>b.type==='child_page');
+    if(childPages.length===0)return;
+    const newNodes=childPages.map(b=>({
+      id:b.id,title:b.child_page?.title||'Untitled',tags:[],type:'page_id',
+      url:'https://notion.so/'+b.id.replace(/-/g,''),
+      created:new Date(b.created_time).getTime(),ageScore:0,excerpt:'',parentId:d.id,
+      x:d.x+(Math.random()-0.5)*80,y:d.y+(Math.random()-0.5)*80
+    }));
+    const newLinks=newNodes.map(n=>({source:d.id,target:n.id,type:'child'}));
+    gData.nodes.push(...newNodes);gData.links.push(...newLinks);
+    expandedNodes.add(d.id);refreshGraph();
+  } catch(e){console.warn('expand failed',e);}
+}
+
+function refreshGraph() {
+  const {nodes,links}=gData;
+  gLink=gLink.data(links,d=>(typeof d.source==='object'?d.source.id:d.source)+'-'+(typeof d.target==='object'?d.target.id:d.target));
+  gLink.exit().remove();
+  gLink=gLink.enter().append('line').attr('stroke','rgba(0,0,0,0.15)').attr('stroke-width',1).merge(gLink);
+  gNode=gNode.data(nodes,d=>d.id);
+  gNode.exit().remove();
+  const newNode=gNode.enter().append('g').attr('cursor','pointer')
     .call(d3.drag()
       .on('start',(e,d)=>{if(!e.active&&gSim)gSim.alphaTarget(0.3).restart();d.fx=d.x;d.fy=d.y;})
       .on('drag', (e,d)=>{d.fx=e.x;d.fy=e.y;})
       .on('end',  (e,d)=>{if(!e.active&&gSim)gSim.alphaTarget(0);d.fx=null;d.fy=null;})
     );
-  gNode.append('circle').attr('r',nodeR).attr('fill',nodeColor)
-    .attr('stroke','rgba(255,255,255,0.8)').attr('stroke-width',2);
-  gNode.append('text').attr('class','node-label')
-    .attr('dy',d=>nodeR(d)+13).attr('text-anchor','middle')
+  newNode.append('circle').attr('r',nodeR).attr('fill',nodeColor).attr('stroke','rgba(255,255,255,0.8)').attr('stroke-width',2);
+  newNode.append('text').attr('class','node-label').attr('dy',d=>nodeR(d)+13).attr('text-anchor','middle')
+    .text(d=>d.title.length>18?d.title.slice(0,16)+'…':d.title);
+  newNode.on('mouseenter',showTooltip).on('mouseleave',scheduleHide);
+  newNode.on('click',(e,d)=>{e.stopPropagation();expandNode(d);});
+  gNode=newNode.merge(gNode);
+  if(gSim){gSim.nodes(nodes);gSim.force('link').links(links);gSim.alpha(0.4).restart();}
+  applyLinkFilter();applySearch(searchQuery);
+}
+
+// ── draw graph ────────────────────────────────────────────
+function drawGraph(data) {
+  gData=data;
+  const {nodes,links}=data;
+  document.getElementById('node-count').textContent=nodes.length+' nodes · '+links.length+' links';
+  const svg=d3.select('#svg');svg.selectAll('*').remove();
+  gG=svg.append('g');
+  gZoom=d3.zoom().scaleExtent([0.1,4]).on('zoom',e=>gG.attr('transform',e.transform));
+  svg.call(gZoom);gSvg=svg;
+  gLink=gG.append('g').selectAll('line').data(links).join('line').attr('stroke','rgba(0,0,0,0.1)').attr('stroke-width',0.8);
+  gNode=gG.append('g').selectAll('g').data(nodes).join('g').attr('cursor','pointer')
+    .call(d3.drag()
+      .on('start',(e,d)=>{if(!e.active&&gSim)gSim.alphaTarget(0.3).restart();d.fx=d.x;d.fy=d.y;})
+      .on('drag', (e,d)=>{d.fx=e.x;d.fy=e.y;})
+      .on('end',  (e,d)=>{if(!e.active&&gSim)gSim.alphaTarget(0);d.fx=null;d.fy=null;})
+    );
+  gNode.append('circle').attr('r',nodeR).attr('fill',nodeColor).attr('stroke','rgba(255,255,255,0.8)').attr('stroke-width',2);
+  gNode.append('text').attr('class','node-label').attr('dy',d=>nodeR(d)+13).attr('text-anchor','middle')
     .text(d=>d.title.length>18?d.title.slice(0,16)+'…':d.title);
   gNode.on('mouseenter',showTooltip).on('mouseleave',scheduleHide);
-  gNode.on('click',(e,d)=>{ e.stopPropagation(); expandNode(d); });
+  gNode.on('click',(e,d)=>{e.stopPropagation();expandNode(d);});
   applyForce();
 }
 
 function setMode(mode) {
-  ['force','radial','timeline'].forEach(m=>
-    document.getElementById('btn-'+m).classList.toggle('active',m===mode));
-  if (mode!=='timeline') gG.selectAll('.tl-deco').remove();
-  if (mode==='force') applyForce();
-  else if (mode==='radial') applyRadial();
-  else if (mode==='timeline') applyTimeline();
+  ['force','radial','timeline'].forEach(m=>document.getElementById('btn-'+m).classList.toggle('active',m===mode));
+  if(mode==='force')applyForce();
+  else if(mode==='radial')applyRadial();
+  else if(mode==='timeline')applyTimeline();
 }
 
+// ── event bindings ────────────────────────────────────────
 document.getElementById('btn-go').addEventListener('click', async () => {
   const key=document.getElementById('inp-key').value.trim();
   const dbId=document.getElementById('inp-db').value.trim().replace(/-/g,'');
   const remember=document.getElementById('chk-remember').checked;
   const errEl=document.getElementById('setup-error');
   errEl.style.display='none';
-  if (!key){errEl.textContent='Please enter your Notion API key';errEl.style.display='block';return;}
-  if (remember) localStorage.setItem(LS_KEY,key);
-  else localStorage.removeItem(LS_KEY);
+  if(!key){errEl.textContent='Please enter your Notion API key';errEl.style.display='block';return;}
+  if(remember)localStorage.setItem(LS_KEY,key);else localStorage.removeItem(LS_KEY);
   currentKey=key;
   document.getElementById('setup').style.display='none';
   document.getElementById('loading').style.display='flex';
   try {
     let pages;
-    if (dbId){setStatus('querying database…');pages=await fetchDatabase(dbId,key);}
+    if(dbId){setStatus('querying database…');pages=await fetchDatabase(dbId,key);}
     else{setStatus('searching all pages…');pages=await fetchAllPages(key);}
     setStatus('building graph from '+pages.length+' pages…');
     const data=buildGraph(pages);
@@ -500,6 +594,44 @@ document.getElementById('btn-go').addEventListener('click', async () => {
 document.getElementById('btn-force').addEventListener('click',()=>setMode('force'));
 document.getElementById('btn-radial').addEventListener('click',()=>setMode('radial'));
 document.getElementById('btn-timeline').addEventListener('click',()=>setMode('timeline'));
+
+// link filter
+['all','rel','tag'].forEach(k=>{
+  document.getElementById('btn-links-'+k).addEventListener('click',()=>{
+    linkFilter=k==='rel'?'relation':k==='tag'?'tag':'all';
+    ['all','rel','tag'].forEach(x=>document.getElementById('btn-links-'+x).classList.toggle('active',x===k));
+    applyLinkFilter();
+  });
+});
+
+// size mode
+['tags','age','title'].forEach(k=>{
+  document.getElementById('btn-size-'+k).addEventListener('click',()=>{
+    sizeMode=k;
+    ['tags','age','title'].forEach(x=>document.getElementById('btn-size-'+x).classList.toggle('active',x===k));
+    applySizeMode();
+  });
+});
+
+// search
+document.getElementById('search-inp').addEventListener('input',e=>applySearch(e.target.value));
+
+// theme cycle
+document.getElementById('btn-theme').addEventListener('click',()=>{
+  document.body.classList.remove(THEMES[themeIdx]);
+  themeIdx=(themeIdx+1)%THEMES.length;
+  if(THEMES[themeIdx])document.body.classList.add(THEMES[themeIdx]);
+  document.getElementById('btn-theme').textContent=THEME_LABELS[themeIdx];
+});
+
+// font cycle
+document.getElementById('btn-font').addEventListener('click',()=>{
+  document.body.classList.remove(FONTS[fontIdx]);
+  fontIdx=(fontIdx+1)%FONTS.length;
+  if(FONTS[fontIdx])document.body.classList.add(FONTS[fontIdx]);
+  document.getElementById('btn-font').textContent=FONT_LABELS[fontIdx];
+});
+
 document.getElementById('btn-reset-view').addEventListener('click',()=>
   gSvg.transition().duration(500).call(gZoom.transform,d3.zoomIdentity));
 document.getElementById('btn-back').addEventListener('click',()=>{
