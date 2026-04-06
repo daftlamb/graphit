@@ -42,20 +42,14 @@ body { background: #f5f2ee; font-family: 'Georgia', serif; overflow: hidden; }
 
 #graph-wrap { position: fixed; inset: 0; display: none; }
 svg { width: 100%; height: 100%; }
+.node-label { font-family: sans-serif; font-size: 11px; fill: rgba(0,0,0,0.55); pointer-events: none; user-select: none; }
 
-.node-label {
-  font-family: sans-serif; font-size: 11px; fill: rgba(0,0,0,0.55);
-  pointer-events: none; user-select: none;
-}
-
-/* interactive card tooltip */
 #tooltip {
   position: fixed; background: #fff; border: 1px solid rgba(0,0,0,0.1);
-  border-radius: 14px; padding: 16px 18px; width: 280px;
+  border-radius: 0; padding: 16px 18px; width: 300px;
   box-shadow: 0 6px 28px rgba(0,0,0,0.12);
   z-index: 100; font-family: sans-serif;
-  opacity: 0; pointer-events: none;
-  transition: opacity 0.15s;
+  opacity: 0; pointer-events: none; transition: opacity 0.15s;
 }
 #tooltip.visible { opacity: 1; pointer-events: all; }
 #tooltip .tt-title { font-size: 14px; color: #1a1a1a; font-weight: 600; margin-bottom: 4px; line-height: 1.4; }
@@ -65,11 +59,7 @@ svg { width: 100%; height: 100%; }
 #tooltip .tt-excerpt { font-size: 12px; color: rgba(0,0,0,0.5); line-height: 1.6; margin-bottom: 12px; max-height: 72px; overflow: hidden; }
 #tooltip .tt-footer { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid rgba(0,0,0,0.06); padding-top: 10px; }
 #tooltip .tt-date  { font-size: 10px; color: rgba(0,0,0,0.3); }
-#tooltip .tt-link  {
-  font-size: 11px; color: #1a1a1a; background: #f5f2ee;
-  padding: 5px 12px; border-radius: 20px; cursor: pointer;
-  text-decoration: none; border: 1px solid rgba(0,0,0,0.08);
-}
+#tooltip .tt-link  { font-size: 11px; color: #1a1a1a; background: #f5f2ee; padding: 5px 12px; border-radius: 20px; cursor: pointer; text-decoration: none; border: 1px solid rgba(0,0,0,0.08); }
 #tooltip .tt-link:hover { background: #1a1a1a; color: #fff; }
 
 #topbar {
@@ -82,18 +72,11 @@ svg { width: 100%; height: 100%; }
 #topbar h2 { font-size: 15px; font-weight: 400; color: #1a1a1a; letter-spacing: -0.3px; }
 #topbar .sep { color: rgba(0,0,0,0.2); font-size: 12px; }
 #node-count { font-size: 12px; color: rgba(0,0,0,0.38); font-family: sans-serif; }
-.tb-btn {
-  background: none; border: 1px solid rgba(0,0,0,0.12); color: rgba(0,0,0,0.5);
-  padding: 4px 12px; border-radius: 20px; cursor: pointer; font-size: 11px;
-  font-family: sans-serif; transition: all 0.15s;
-}
+.tb-btn { background: none; border: 1px solid rgba(0,0,0,0.12); color: rgba(0,0,0,0.5); padding: 4px 12px; border-radius: 20px; cursor: pointer; font-size: 11px; font-family: sans-serif; transition: all 0.15s; }
 .tb-btn:hover { background: rgba(0,0,0,0.05); }
 .tb-btn.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
 
-#loading {
-  position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
-  background: #f5f2ee; z-index: 150; flex-direction: column; gap: 16px;
-}
+#loading { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: #f5f2ee; z-index: 150; flex-direction: column; gap: 16px; }
 .spinner { width: 32px; height: 32px; border: 2px solid rgba(0,0,0,0.1); border-top-color: #1a1a1a; border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 #ld-title { font-size: 18px; color: #1a1a1a; }
@@ -161,25 +144,14 @@ const NOTION_PROXY = 'https://notionproxy.daftlamb.workers.dev/v1';
 const NOTION_VERSION = '2022-06-28';
 const LS_KEY = 'graphit_api_key';
 
-// ── localStorage for API key ──────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   const saved = localStorage.getItem(LS_KEY);
-  if (saved) {
-    document.getElementById('inp-key').value = saved;
-    document.getElementById('chk-remember').checked = true;
-  }
+  if (saved) { document.getElementById('inp-key').value = saved; document.getElementById('chk-remember').checked = true; }
 });
 
 async function notionFetch(path, key, body=null) {
   const url = NOTION_PROXY + path;
-  const opts = {
-    method: body ? 'POST' : 'GET',
-    headers: {
-      'Authorization': 'Bearer ' + key,
-      'Notion-Version': NOTION_VERSION,
-      'Content-Type': 'application/json'
-    }
-  };
+  const opts = { method: body ? 'POST' : 'GET', headers: { 'Authorization': 'Bearer ' + key, 'Notion-Version': NOTION_VERSION, 'Content-Type': 'application/json' } };
   if (body) opts.body = JSON.stringify(body);
   const r = await fetch(url, opts);
   if (!r.ok) throw new Error('Notion API ' + r.status + ': ' + await r.text());
@@ -212,17 +184,13 @@ async function fetchAllPages(key) {
   return pages;
 }
 
-// fetch first few blocks as excerpt
 async function fetchExcerpt(pageId, key) {
   try {
     const res = await notionFetch('/blocks/'+pageId+'/children?page_size=5', key);
     const texts = [];
     for (const block of res.results) {
       const rt = block[block.type]?.rich_text;
-      if (rt && rt.length > 0) {
-        texts.push(rt.map(t=>t.plain_text).join(''));
-        if (texts.join(' ').length > 120) break;
-      }
+      if (rt && rt.length > 0) { texts.push(rt.map(t=>t.plain_text).join('')); if (texts.join(' ').length > 120) break; }
     }
     return texts.join(' ').slice(0, 140) || '';
   } catch { return ''; }
@@ -231,8 +199,7 @@ async function fetchExcerpt(pageId, key) {
 function getTitle(page) {
   if (!page.properties) return 'Untitled';
   for (const prop of Object.values(page.properties)) {
-    if (prop.type === 'title' && prop.title && prop.title.length > 0)
-      return prop.title.map(t => t.plain_text).join('');
+    if (prop.type === 'title' && prop.title && prop.title.length > 0) return prop.title.map(t=>t.plain_text).join('');
   }
   return 'Untitled';
 }
@@ -241,10 +208,8 @@ function getTags(page) {
   if (!page.properties) return [];
   const tags = [];
   for (const prop of Object.values(page.properties)) {
-    if (prop.type === 'multi_select' && prop.multi_select)
-      prop.multi_select.forEach(v => v && tags.push(v.name));
-    else if (prop.type === 'select' && prop.select)
-      tags.push(prop.select.name);
+    if (prop.type === 'multi_select' && prop.multi_select) prop.multi_select.forEach(v => v && tags.push(v.name));
+    else if (prop.type === 'select' && prop.select) tags.push(prop.select.name);
   }
   return tags;
 }
@@ -253,48 +218,39 @@ function buildGraph(pages) {
   const nodes = [], links = [], tagMap = {};
   const idSet = new Set(pages.map(p => p.id));
   pages.forEach(page => {
-    const title   = getTitle(page);
-    const tags    = getTags(page);
-    const type    = page.parent?.type || 'page';
+    const title = getTitle(page), tags = getTags(page);
+    const type = page.parent?.type || 'page';
     const created = new Date(page.created_time).getTime();
     nodes.push({ id: page.id, title, tags, type, url: page.url, created, excerpt: '' });
     tags.forEach(t => { if (!tagMap[t]) tagMap[t]=[]; tagMap[t].push(page.id); });
     if (page.properties) {
       for (const prop of Object.values(page.properties)) {
         if (prop.type === 'relation' && prop.relation)
-          prop.relation.forEach(rel => {
-            if (idSet.has(rel.id)) links.push({ source: page.id, target: rel.id, type: 'relation' });
-          });
+          prop.relation.forEach(rel => { if (idSet.has(rel.id)) links.push({ source: page.id, target: rel.id, type: 'relation' }); });
       }
     }
   });
   Object.values(tagMap).forEach(ids => {
     if (ids.length < 2) return;
-    for (let i=0;i<ids.length;i++) for (let j=i+1;j<ids.length;j++)
-      links.push({ source: ids[i], target: ids[j], type: 'tag' });
+    for (let i=0;i<ids.length;i++) for (let j=i+1;j<ids.length;j++) links.push({ source: ids[i], target: ids[j], type: 'tag' });
   });
   return { nodes, links };
 }
 
 const TYPE_COLORS = { database_id:'#c8b8a2', page_id:'#a8c4b8', workspace:'#b8a8c4', default:'#c4b8a8' };
 function nodeColor(d) { return TYPE_COLORS[d.type] || TYPE_COLORS.default; }
-function nodeR(d) { return Math.max(10, Math.min(22, 8 + d.tags.length * 2.5)); }
+function nodeR(d) { return Math.max(16, Math.min(34, 14 + d.tags.length * 3)); }
 
-let gData=null, gSvg=null, gG=null, gZoom=null, gNode=null, gLink=null, gSim=null;
-let currentKey = '';
-let tooltipTimer = null;
-
-// ── tooltip (hover-stable) ────────────────────────────────
+let gData=null, gSvg=null, gG=null, gZoom=null, gNode=null, gLink=null, gSim=null, currentKey='';
+let tooltipTimer=null;
 const ttEl = document.getElementById('tooltip');
-let ttVisible = false;
 
 function positionTooltip(x, y) {
-  const W = window.innerWidth, H = window.innerHeight;
-  let left = x + 16, top = y - 10;
-  if (left + 300 > W) left = x - 296;
-  if (top + 220 > H) top = H - 230;
-  ttEl.style.left = left + 'px';
-  ttEl.style.top  = top  + 'px';
+  const W=window.innerWidth, H=window.innerHeight;
+  let left=x+16, top=y-10;
+  if (left+310>W) left=x-316;
+  if (top+220>H) top=H-230;
+  ttEl.style.left=left+'px'; ttEl.style.top=top+'px';
 }
 
 function showTooltip(e, d) {
@@ -305,167 +261,164 @@ function showTooltip(e, d) {
   document.getElementById('tt-date').textContent  = d.created ? new Date(d.created).toLocaleDateString() : '';
   document.getElementById('tt-link').href         = d.url;
   const excerptEl = document.getElementById('tt-excerpt');
-  if (d.excerpt) {
-    excerptEl.textContent = d.excerpt;
-  } else {
-    excerptEl.textContent = '…';
-    fetchExcerpt(d.id, currentKey).then(text => {
-      d.excerpt = text;
-      excerptEl.textContent = text || '';
-    });
-  }
+  if (d.excerpt) { excerptEl.textContent = d.excerpt; }
+  else { excerptEl.textContent = '…'; fetchExcerpt(d.id, currentKey).then(text => { d.excerpt=text; excerptEl.textContent=text||''; }); }
   positionTooltip(e.clientX, e.clientY);
   ttEl.classList.add('visible');
-  ttVisible = true;
 }
 
-function scheduleHide() {
-  tooltipTimer = setTimeout(() => {
-    ttEl.classList.remove('visible');
-    ttVisible = false;
-  }, 200);
-}
-
+function scheduleHide() { tooltipTimer = setTimeout(() => ttEl.classList.remove('visible'), 200); }
 ttEl.addEventListener('mouseenter', () => clearTimeout(tooltipTimer));
 ttEl.addEventListener('mouseleave', scheduleHide);
 
-// ── mode: force ───────────────────────────────────────────
 function applyForce() {
   if (gSim) gSim.stop();
-  const W = window.innerWidth, H = window.innerHeight;
-  const { nodes, links } = gData;
-  gSim = d3.forceSimulation(nodes)
-    .force('link', d3.forceLink(links).id(d=>d.id).distance(d=>d.type==='tag'?90:60).strength(d=>d.type==='tag'?0.3:0.7))
-    .force('charge', d3.forceManyBody().strength(-180))
-    .force('center', d3.forceCenter(W/2, H/2))
-    .force('collision', d3.forceCollide(d=>nodeR(d)+4));
+  const W=window.innerWidth, H=window.innerHeight;
+  const {nodes,links}=gData;
+  gSim=d3.forceSimulation(nodes)
+    .force('link',d3.forceLink(links).id(d=>d.id).distance(d=>d.type==='tag'?90:60).strength(d=>d.type==='tag'?0.3:0.7))
+    .force('charge',d3.forceManyBody().strength(-200))
+    .force('center',d3.forceCenter(W/2,H/2))
+    .force('collision',d3.forceCollide(d=>nodeR(d)+5));
   gLink.transition().duration(600)
-    .attr('stroke', d=>d.type==='relation'?'rgba(0,0,0,0.25)':'rgba(0,0,0,0.08)')
-    .attr('stroke-width', d=>d.type==='relation'?1.5:0.8);
-  gSim.on('tick', () => {
+    .attr('stroke',d=>d.type==='relation'?'rgba(0,0,0,0.25)':'rgba(0,0,0,0.08)')
+    .attr('stroke-width',d=>d.type==='relation'?1.5:0.8);
+  gSim.on('tick',()=>{
     gLink.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
     gNode.attr('transform',d=>`translate(${d.x},${d.y})`);
   });
   gSim.alpha(0.8).restart();
 }
 
-// ── mode: radial ──────────────────────────────────────────
 function applyRadial() {
   if (gSim) gSim.stop();
-  const W = window.innerWidth, H = window.innerHeight;
-  const cx = W/2, cy = H/2, R = Math.min(W,H)*0.38;
-  const nodes = gData.nodes;
-  const tagCount = {};
-  nodes.forEach(n => n.tags.forEach(t => { tagCount[t]=(tagCount[t]||0)+1; }));
-  const topTags = Object.entries(tagCount).sort((a,b)=>b[1]-a[1]).slice(0,12).map(e=>e[0]);
-  const tagIndex = {};
-  topTags.forEach((t,i) => tagIndex[t]=i);
-  const targets = nodes.map(n => {
-    const tag = n.tags.find(t => tagIndex[t]!==undefined);
-    if (tag !== undefined) {
-      const angle = (tagIndex[tag] / topTags.length) * Math.PI * 2 - Math.PI/2;
-      const r = R * (0.5 + Math.random()*0.5);
-      return { x: cx + Math.cos(angle)*r, y: cy + Math.sin(angle)*r };
+  const W=window.innerWidth, H=window.innerHeight;
+  const cx=W/2, cy=H/2, R=Math.min(W,H)*0.38;
+  const nodes=gData.nodes;
+  const tagCount={};
+  nodes.forEach(n=>n.tags.forEach(t=>{tagCount[t]=(tagCount[t]||0)+1;}));
+  const topTags=Object.entries(tagCount).sort((a,b)=>b[1]-a[1]).slice(0,12).map(e=>e[0]);
+  const tagIndex={};
+  topTags.forEach((t,i)=>tagIndex[t]=i);
+  const targets=nodes.map(n=>{
+    const tag=n.tags.find(t=>tagIndex[t]!==undefined);
+    if (tag!==undefined) {
+      const angle=(tagIndex[tag]/topTags.length)*Math.PI*2-Math.PI/2;
+      const r=R*(0.5+Math.random()*0.5);
+      return {x:cx+Math.cos(angle)*r, y:cy+Math.sin(angle)*r};
     }
-    return { x: cx + (Math.random()-0.5)*80, y: cy + (Math.random()-0.5)*80 };
+    return {x:cx+(Math.random()-0.5)*80, y:cy+(Math.random()-0.5)*80};
   });
-  gSim = d3.forceSimulation(nodes)
-    .force('x', d3.forceX((d,i)=>targets[i].x).strength(0.5))
-    .force('y', d3.forceY((d,i)=>targets[i].y).strength(0.5))
-    .force('collision', d3.forceCollide(d=>nodeR(d)+3))
-    .force('charge', d3.forceManyBody().strength(-40));
+  gSim=d3.forceSimulation(nodes)
+    .force('x',d3.forceX((d,i)=>targets[i].x).strength(0.5))
+    .force('y',d3.forceY((d,i)=>targets[i].y).strength(0.5))
+    .force('collision',d3.forceCollide(d=>nodeR(d)+4))
+    .force('charge',d3.forceManyBody().strength(-40));
   gLink.transition().duration(600).attr('stroke','rgba(0,0,0,0.06)').attr('stroke-width',0.6);
-  gSim.on('tick', () => {
+  gSim.on('tick',()=>{
     gLink.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
     gNode.attr('transform',d=>`translate(${d.x},${d.y})`);
   });
   gSim.alpha(0.8).restart();
 }
 
-// ── mode: timeline ────────────────────────────────────────
 function applyTimeline() {
   if (gSim) gSim.stop();
-  const W = window.innerWidth, H = window.innerHeight, pad = 80;
-  const nodes = gData.nodes;
-  const times = nodes.map(n=>n.created).filter(Boolean);
-  const tMin = Math.min(...times), tMax = Math.max(...times);
-  const xScale = d3.scaleLinear().domain([tMin,tMax]).range([pad, W-pad]);
-  const types = [...new Set(nodes.map(n=>n.type))];
-  const yScale = d3.scaleOrdinal().domain(types).range(
-    types.map((_,i) => pad + (i+1)*(H-pad*2)/(types.length+1))
-  );
-  const targets = nodes.map(n => ({
-    x: n.created ? xScale(n.created) : W/2,
-    y: yScale(n.type) + (Math.random()-0.5)*40
+  const W=window.innerWidth, H=window.innerHeight;
+  const padL=100, padR=60, cy=H/2;
+  const nodes=gData.nodes;
+  gG.selectAll('.tl-deco').remove();
+  const times=nodes.map(n=>n.created).filter(Boolean);
+  const tMin=Math.min(...times), tMax=Math.max(...times);
+  const xScale=d3.scaleLinear().domain([tMin,tMax]).range([padL,W-padR]);
+  const deco=gG.append('g').attr('class','tl-deco');
+  // axis line
+  deco.append('line').attr('x1',padL).attr('x2',W-padR).attr('y1',cy).attr('y2',cy)
+    .attr('stroke','rgba(0,0,0,0.15)').attr('stroke-width',1);
+  // year labels
+  const y0=new Date(tMin).getFullYear(), y1=new Date(tMax).getFullYear();
+  for (let y=y0; y<=y1; y++) {
+    const tx=xScale(new Date(y+'-01-01').getTime());
+    if (tx<padL||tx>W-padR) continue;
+    deco.append('line').attr('x1',tx).attr('x2',tx).attr('y1',cy-8).attr('y2',cy+8)
+      .attr('stroke','rgba(0,0,0,0.2)').attr('stroke-width',1);
+    deco.append('text').attr('x',tx).attr('y',cy+64)
+      .attr('text-anchor','middle').attr('font-family','sans-serif')
+      .attr('font-size',y===y0||y===y1?52:36)
+      .attr('fill',y===y0||y===y1?'rgba(0,0,0,0.1)':'rgba(0,0,0,0.06)')
+      .attr('font-weight','700').text(y);
+  }
+  const seed=nodes.map((_,i)=>((Math.sin(i*127.1)*43758.5453)%1+1)%1);
+  const targets=nodes.map((n,i)=>({
+    x:n.created?xScale(n.created):W/2,
+    y:cy+(seed[i]-0.5)*(H*0.55)
   }));
-  gSim = d3.forceSimulation(nodes)
-    .force('x', d3.forceX((d,i)=>targets[i].x).strength(0.8))
-    .force('y', d3.forceY((d,i)=>targets[i].y).strength(0.8))
-    .force('collision', d3.forceCollide(d=>nodeR(d)+3));
-  gLink.transition().duration(600).attr('stroke','rgba(0,0,0,0.05)').attr('stroke-width',0.5);
-  gSim.on('tick', () => {
+  gSim=d3.forceSimulation(nodes)
+    .force('x',d3.forceX((d,i)=>targets[i].x).strength(0.9))
+    .force('y',d3.forceY((d,i)=>targets[i].y).strength(0.4))
+    .force('collision',d3.forceCollide(d=>nodeR(d)+4));
+  gLink.transition().duration(600).attr('stroke','rgba(0,0,0,0.04)').attr('stroke-width',0.5);
+  gSim.on('tick',()=>{
     gLink.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
     gNode.attr('transform',d=>`translate(${d.x},${d.y})`);
   });
   gSim.alpha(0.8).restart();
 }
 
-// ── draw graph ────────────────────────────────────────────
 function drawGraph(data) {
-  gData = data;
-  const { nodes, links } = data;
-  document.getElementById('node-count').textContent = nodes.length + ' nodes · ' + links.length + ' links';
-  const svg = d3.select('#svg');
+  gData=data;
+  const {nodes,links}=data;
+  document.getElementById('node-count').textContent=nodes.length+' nodes · '+links.length+' links';
+  const svg=d3.select('#svg');
   svg.selectAll('*').remove();
-  gG = svg.append('g');
-  gZoom = d3.zoom().scaleExtent([0.1,4]).on('zoom', e => gG.attr('transform', e.transform));
+  gG=svg.append('g');
+  gZoom=d3.zoom().scaleExtent([0.1,4]).on('zoom',e=>gG.attr('transform',e.transform));
   svg.call(gZoom);
-  gSvg = svg;
-  gLink = gG.append('g').selectAll('line').data(links).join('line')
+  gSvg=svg;
+  gLink=gG.append('g').selectAll('line').data(links).join('line')
     .attr('stroke','rgba(0,0,0,0.1)').attr('stroke-width',0.8);
-  gNode = gG.append('g').selectAll('g').data(nodes).join('g')
+  gNode=gG.append('g').selectAll('g').data(nodes).join('g')
     .attr('cursor','pointer')
     .call(d3.drag()
-      .on('start',(e,d)=>{ if(!e.active&&gSim) gSim.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; })
-      .on('drag', (e,d)=>{ d.fx=e.x; d.fy=e.y; })
-      .on('end',  (e,d)=>{ if(!e.active&&gSim) gSim.alphaTarget(0); d.fx=null; d.fy=null; })
+      .on('start',(e,d)=>{if(!e.active&&gSim)gSim.alphaTarget(0.3).restart();d.fx=d.x;d.fy=d.y;})
+      .on('drag', (e,d)=>{d.fx=e.x;d.fy=e.y;})
+      .on('end',  (e,d)=>{if(!e.active&&gSim)gSim.alphaTarget(0);d.fx=null;d.fy=null;})
     );
   gNode.append('circle').attr('r',nodeR).attr('fill',nodeColor)
-    .attr('stroke','rgba(255,255,255,0.8)').attr('stroke-width',1.5);
+    .attr('stroke','rgba(255,255,255,0.8)').attr('stroke-width',2);
   gNode.append('text').attr('class','node-label')
-    .attr('dy',d=>nodeR(d)+12).attr('text-anchor','middle')
+    .attr('dy',d=>nodeR(d)+13).attr('text-anchor','middle')
     .text(d=>d.title.length>18?d.title.slice(0,16)+'…':d.title);
-  gNode.on('mouseenter', showTooltip).on('mouseleave', scheduleHide);
+  gNode.on('mouseenter',showTooltip).on('mouseleave',scheduleHide);
   applyForce();
 }
 
 function setMode(mode) {
-  ['force','radial','timeline'].forEach(m =>
-    document.getElementById('btn-'+m).classList.toggle('active', m===mode));
+  ['force','radial','timeline'].forEach(m=>
+    document.getElementById('btn-'+m).classList.toggle('active',m===mode));
   if (mode==='force') applyForce();
   else if (mode==='radial') applyRadial();
   else if (mode==='timeline') applyTimeline();
 }
 
-// ── main ──────────────────────────────────────────────────
 document.getElementById('btn-go').addEventListener('click', async () => {
-  const key  = document.getElementById('inp-key').value.trim();
-  const dbId = document.getElementById('inp-db').value.trim().replace(/-/g,'');
-  const remember = document.getElementById('chk-remember').checked;
-  const errEl = document.getElementById('setup-error');
+  const key=document.getElementById('inp-key').value.trim();
+  const dbId=document.getElementById('inp-db').value.trim().replace(/-/g,'');
+  const remember=document.getElementById('chk-remember').checked;
+  const errEl=document.getElementById('setup-error');
   errEl.style.display='none';
-  if (!key) { errEl.textContent='Please enter your Notion API key'; errEl.style.display='block'; return; }
-  if (remember) localStorage.setItem(LS_KEY, key);
+  if (!key){errEl.textContent='Please enter your Notion API key';errEl.style.display='block';return;}
+  if (remember) localStorage.setItem(LS_KEY,key);
   else localStorage.removeItem(LS_KEY);
-  currentKey = key;
+  currentKey=key;
   document.getElementById('setup').style.display='none';
   document.getElementById('loading').style.display='flex';
   try {
     let pages;
-    if (dbId) { setStatus('querying database…'); pages = await fetchDatabase(dbId, key); }
-    else       { setStatus('searching all pages…'); pages = await fetchAllPages(key); }
-    setStatus('building graph from ' + pages.length + ' pages…');
-    const data = buildGraph(pages);
+    if (dbId){setStatus('querying database…');pages=await fetchDatabase(dbId,key);}
+    else{setStatus('searching all pages…');pages=await fetchAllPages(key);}
+    setStatus('building graph from '+pages.length+' pages…');
+    const data=buildGraph(pages);
     document.getElementById('loading').style.display='none';
     document.getElementById('graph-wrap').style.display='block';
     document.getElementById('topbar').style.display='flex';
@@ -473,17 +426,17 @@ document.getElementById('btn-go').addEventListener('click', async () => {
   } catch(err) {
     document.getElementById('loading').style.display='none';
     document.getElementById('setup').style.display='flex';
-    errEl.textContent=err.message; errEl.style.display='block';
+    errEl.textContent=err.message;errEl.style.display='block';
   }
 });
 
-document.getElementById('btn-force').addEventListener('click',    ()=>setMode('force'));
-document.getElementById('btn-radial').addEventListener('click',   ()=>setMode('radial'));
-document.getElementById('btn-timeline').addEventListener('click', ()=>setMode('timeline'));
-document.getElementById('btn-reset-view').addEventListener('click', ()=>
-  gSvg.transition().duration(500).call(gZoom.transform, d3.zoomIdentity));
-document.getElementById('btn-back').addEventListener('click', () => {
-  if (gSim) gSim.stop();
+document.getElementById('btn-force').addEventListener('click',()=>setMode('force'));
+document.getElementById('btn-radial').addEventListener('click',()=>setMode('radial'));
+document.getElementById('btn-timeline').addEventListener('click',()=>setMode('timeline'));
+document.getElementById('btn-reset-view').addEventListener('click',()=>
+  gSvg.transition().duration(500).call(gZoom.transform,d3.zoomIdentity));
+document.getElementById('btn-back').addEventListener('click',()=>{
+  if(gSim)gSim.stop();
   document.getElementById('graph-wrap').style.display='none';
   document.getElementById('topbar').style.display='none';
   document.getElementById('setup').style.display='flex';
