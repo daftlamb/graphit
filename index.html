@@ -389,37 +389,38 @@ function applyRadial() {
 function applyTimeline() {
   if (gSim) gSim.stop();
   const W=window.innerWidth, H=window.innerHeight;
-  const padL=100, padR=60, cy=H/2;
+  const padT=80, padB=80, axisX=72;
   const nodes=gData.nodes;
   gG.selectAll('.tl-deco').remove();
   const times=nodes.map(n=>n.created).filter(Boolean);
   const tMin=Math.min(...times), tMax=Math.max(...times);
-  const xScale=d3.scaleLinear().domain([tMin,tMax]).range([padL,W-padR]);
+  const yScale=d3.scaleLinear().domain([tMin,tMax]).range([padT,H-padB]);
   const deco=gG.append('g').attr('class','tl-deco');
-  // axis line
-  deco.append('line').attr('x1',padL).attr('x2',W-padR).attr('y1',cy).attr('y2',cy)
+  // vertical axis line
+  deco.append('line').attr('x1',axisX).attr('x2',axisX).attr('y1',padT).attr('y2',H-padB)
     .attr('stroke','rgba(0,0,0,0.15)').attr('stroke-width',1);
-  // year labels
+  // year labels on left
   const y0=new Date(tMin).getFullYear(), y1=new Date(tMax).getFullYear();
   for (let y=y0; y<=y1; y++) {
-    const tx=xScale(new Date(y+'-01-01').getTime());
-    if (tx<padL||tx>W-padR) continue;
-    deco.append('line').attr('x1',tx).attr('x2',tx).attr('y1',cy-8).attr('y2',cy+8)
+    const ty=yScale(new Date(y+'-01-01').getTime());
+    if (ty<padT||ty>H-padB) continue;
+    deco.append('line').attr('x1',axisX-6).attr('x2',axisX+6).attr('y1',ty).attr('y2',ty)
       .attr('stroke','rgba(0,0,0,0.2)').attr('stroke-width',1);
-    deco.append('text').attr('x',tx).attr('y',cy+64)
-      .attr('text-anchor','middle').attr('font-family','sans-serif')
-      .attr('font-size',y===y0||y===y1?52:36)
+    deco.append('text').attr('x',axisX-14).attr('y',ty+6)
+      .attr('text-anchor','end').attr('font-family','sans-serif')
+      .attr('font-size',y===y0||y===y1?44:28)
       .attr('fill',y===y0||y===y1?'rgba(0,0,0,0.1)':'rgba(0,0,0,0.06)')
       .attr('font-weight','700').text(y);
   }
+  // nodes: y = time, x = scatter to the right of axis
   const seed=nodes.map((_,i)=>((Math.sin(i*127.1)*43758.5453)%1+1)%1);
   const targets=nodes.map((n,i)=>({
-    x:n.created?xScale(n.created):W/2,
-    y:cy+(seed[i]-0.5)*(H*0.55)
+    x: axisX + 40 + seed[i]*(W - axisX - 80),
+    y: n.created ? yScale(n.created) : (padT+H-padB)/2
   }));
   gSim=d3.forceSimulation(nodes)
-    .force('x',d3.forceX((d,i)=>targets[i].x).strength(0.9))
-    .force('y',d3.forceY((d,i)=>targets[i].y).strength(0.4))
+    .force('x',d3.forceX((d,i)=>targets[i].x).strength(0.5))
+    .force('y',d3.forceY((d,i)=>targets[i].y).strength(0.9))
     .force('collision',d3.forceCollide(d=>nodeR(d)+4));
   gLink.transition().duration(600).attr('stroke','rgba(0,0,0,0.04)').attr('stroke-width',0.5);
   gSim.on('tick',()=>{
@@ -461,6 +462,7 @@ function drawGraph(data) {
 function setMode(mode) {
   ['force','radial','timeline'].forEach(m=>
     document.getElementById('btn-'+m).classList.toggle('active',m===mode));
+  if (mode!=='timeline') gG.selectAll('.tl-deco').remove();
   if (mode==='force') applyForce();
   else if (mode==='radial') applyRadial();
   else if (mode==='timeline') applyTimeline();
